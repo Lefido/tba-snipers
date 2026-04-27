@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de Bord Analytique</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <!-- SheetJS -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header fixe -->
+  <header class="main-header">
+    <div class="header-branding">
+      <img src="assets/Snipers.png" alt="Logo Snipers" class="header-logo">
+      <div class="header-content">
+        <h1>Tableau de Bord Analytique</h1>
+        <p class="header-subtitle">Visualisation avancée des données temporelles</p>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <a href="#dispersion-14h">Dispersion 14h</a>
+      <a href="#arrivee-14h">Arrivée 14h</a>
+      <a href="#dispersion-18h">Dispersion 18h</a>
+      <a href="#arrivee-18h">Arrivée 18h</a>
+      <a href="#concentration">Concentration</a>
+    </nav>
+    <div class="header-controls">
+      <button id="btn-reset-all" class="btn btn-danger">Réinitialiser toutes les données</button>
+      <span id="status-indicator" class="status-badge">Aucune donnée chargée</span>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <!-- Section Dispersion 14h -->
+    <section id="dispersion-14h" class="dashboard-section" data-type="Dispersion 14h">
+      <div class="section-header">
+        <h2>Dispersion 14h</h2>
+        <div class="section-actions">
+          <label class="btn btn-primary file-label">
+            <span>📁 Importer Excel</span>
+            <input type="file" accept=".xlsx" class="file-input" data-section="Dispersion 14h">
+          </label>
+          <button class="btn btn-secondary btn-export" data-section="Dispersion 14h">📷 Exporter PNG</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filter-day-d14">Jour</label>
+          <select id="filter-day-d14" class="filter-day" data-section="Dispersion 14h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-month-d14">Mois</label>
+          <select id="filter-month-d14" class="filter-month" data-section="Dispersion 14h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-year-d14">Année</label>
+          <select id="filter-year-d14" class="filter-year" data-section="Dispersion 14h"><option value="">Toutes</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-granularity-d14">Regroupement</label>
+          <select id="filter-granularity-d14" class="filter-granularity" data-section="Dispersion 14h">
+            <option value="day">Jour</option>
+            <option value="week">Semaine</option>
+            <option value="month">Mois</option>
+            <option value="year">Année</option>
+          </select>
+        </div>
+      </div>
+      <div id="chart-dispersion-14h" class="chart-container"></div>
+      <details class="table-details">
+        <summary>Données brutes — Dispersion 14h</summary>
+        <div class="table-wrapper">
+          <table class="data-table" id="table-dispersion-14h">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Colis annoncé</th>
+                <th>Colis Flashé</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- Section Arrivée 14h -->
+    <section id="arrivee-14h" class="dashboard-section" data-type="Arrivée 14h">
+      <div class="section-header">
+        <h2>Arrivée 14h</h2>
+        <div class="section-actions">
+          <label class="btn btn-primary file-label">
+            <span>📁 Importer Excel</span>
+            <input type="file" accept=".xlsx" class="file-input" data-section="Arrivée 14h">
+          </label>
+          <button class="btn btn-secondary btn-export" data-section="Arrivée 14h">📷 Exporter PNG</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filter-day-a14">Jour</label>
+          <select id="filter-day-a14" class="filter-day" data-section="Arrivée 14h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-month-a14">Mois</label>
+          <select id="filter-month-a14" class="filter-month" data-section="Arrivée 14h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-year-a14">Année</label>
+          <select id="filter-year-a14" class="filter-year" data-section="Arrivée 14h"><option value="">Toutes</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-granularity-a14">Regroupement</label>
+          <select id="filter-granularity-a14" class="filter-granularity" data-section="Arrivée 14h">
+            <option value="day">Jour</option>
+            <option value="week">Semaine</option>
+            <option value="month">Mois</option>
+            <option value="year">Année</option>
+          </select>
+        </div>
+      </div>
+      <div id="chart-arrivee-14h" class="chart-container"></div>
+      <details class="table-details">
+        <summary>Données brutes — Arrivée 14h</summary>
+        <div class="table-wrapper">
+          <table class="data-table" id="table-arrivee-14h">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Colis annoncé</th>
+                <th>Colis Flashé</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- Section Dispersion 18h -->
+    <section id="dispersion-18h" class="dashboard-section" data-type="Dispersion 18h">
+      <div class="section-header">
+        <h2>Dispersion 18h</h2>
+        <div class="section-actions">
+          <label class="btn btn-primary file-label">
+            <span>📁 Importer Excel</span>
+            <input type="file" accept=".xlsx" class="file-input" data-section="Dispersion 18h">
+          </label>
+          <button class="btn btn-secondary btn-export" data-section="Dispersion 18h">📷 Exporter PNG</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filter-day-d18">Jour</label>
+          <select id="filter-day-d18" class="filter-day" data-section="Dispersion 18h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-month-d18">Mois</label>
+          <select id="filter-month-d18" class="filter-month" data-section="Dispersion 18h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-year-d18">Année</label>
+          <select id="filter-year-d18" class="filter-year" data-section="Dispersion 18h"><option value="">Toutes</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-granularity-d18">Regroupement</label>
+          <select id="filter-granularity-d18" class="filter-granularity" data-section="Dispersion 18h">
+            <option value="day">Jour</option>
+            <option value="week">Semaine</option>
+            <option value="month">Mois</option>
+            <option value="year">Année</option>
+          </select>
+        </div>
+      </div>
+      <div id="chart-dispersion-18h" class="chart-container"></div>
+      <details class="table-details">
+        <summary>Données brutes — Dispersion 18h</summary>
+        <div class="table-wrapper">
+          <table class="data-table" id="table-dispersion-18h">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Colis annoncé</th>
+                <th>Colis Flashé</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- Section Arrivée 18h -->
+    <section id="arrivee-18h" class="dashboard-section" data-type="Arrivée 18h">
+      <div class="section-header">
+        <h2>Arrivée 18h</h2>
+        <div class="section-actions">
+          <label class="btn btn-primary file-label">
+            <span>📁 Importer Excel</span>
+            <input type="file" accept=".xlsx" class="file-input" data-section="Arrivée 18h">
+          </label>
+          <button class="btn btn-secondary btn-export" data-section="Arrivée 18h">📷 Exporter PNG</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filter-day-a18">Jour</label>
+          <select id="filter-day-a18" class="filter-day" data-section="Arrivée 18h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-month-a18">Mois</label>
+          <select id="filter-month-a18" class="filter-month" data-section="Arrivée 18h"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-year-a18">Année</label>
+          <select id="filter-year-a18" class="filter-year" data-section="Arrivée 18h"><option value="">Toutes</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-granularity-a18">Regroupement</label>
+          <select id="filter-granularity-a18" class="filter-granularity" data-section="Arrivée 18h">
+            <option value="day">Jour</option>
+            <option value="week">Semaine</option>
+            <option value="month">Mois</option>
+            <option value="year">Année</option>
+          </select>
+        </div>
+      </div>
+      <div id="chart-arrivee-18h" class="chart-container"></div>
+      <details class="table-details">
+        <summary>Données brutes — Arrivée 18h</summary>
+        <div class="table-wrapper">
+          <table class="data-table" id="table-arrivee-18h">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Colis annoncé</th>
+                <th>Colis Flashé</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- Section Concentration -->
+    <section id="concentration" class="dashboard-section" data-type="Concentration">
+      <div class="section-header">
+        <h2>Concentration</h2>
+        <div class="section-actions">
+          <label class="btn btn-primary file-label">
+            <span>📁 Importer Excel</span>
+            <input type="file" accept=".xlsx" class="file-input" data-section="Concentration">
+          </label>
+          <button class="btn btn-secondary btn-export" data-section="Concentration">📷 Exporter PNG</button>
+        </div>
+      </div>
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filter-day-c">Jour</label>
+          <select id="filter-day-c" class="filter-day" data-section="Concentration"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-month-c">Mois</label>
+          <select id="filter-month-c" class="filter-month" data-section="Concentration"><option value="">Tous</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-year-c">Année</label>
+          <select id="filter-year-c" class="filter-year" data-section="Concentration"><option value="">Toutes</option></select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-granularity-c">Regroupement</label>
+          <select id="filter-granularity-c" class="filter-granularity" data-section="Concentration">
+            <option value="day">Jour</option>
+            <option value="week">Semaine</option>
+            <option value="month">Mois</option>
+            <option value="year">Année</option>
+          </select>
+        </div>
+      </div>
+      <div id="chart-concentration" class="chart-container"></div>
+      <details class="table-details">
+        <summary>Données brutes — Concentration</summary>
+        <div class="table-wrapper">
+          <table class="data-table" id="table-concentration">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Colis Flashé</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
