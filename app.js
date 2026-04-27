@@ -605,6 +605,83 @@ function clearAllData() {
 }
 
 /* ============================================================
+   AJOUT MANUEL
+   ============================================================ */
+
+function populateManualTypeSelects() {
+  document.querySelectorAll(".manual-type").forEach(select => {
+    const section = select.dataset.section;
+    select.innerHTML = "";
+    SECTION_TYPES.forEach(type => {
+      const opt = document.createElement("option");
+      opt.value = type;
+      opt.textContent = type;
+      if (type === section) opt.selected = true;
+      select.appendChild(opt);
+    });
+  });
+}
+
+function toggleManualForm(sectionType, show) {
+  const container = document.querySelector(`.manual-form-container[data-section="${sectionType}"]`);
+  if (container) container.style.display = show ? "block" : "none";
+}
+
+function resetManualForm(sectionType) {
+  const container = document.querySelector(`.manual-form-container[data-section="${sectionType}"]`);
+  if (!container) return;
+  container.querySelector(".manual-date").value = "";
+  const annoncesInput = container.querySelector(".manual-annonces");
+  if (annoncesInput) annoncesInput.value = "0";
+  container.querySelector(".manual-flashe").value = "0";
+}
+
+function handleManualSave(sectionType) {
+  const container = document.querySelector(`.manual-form-container[data-section="${sectionType}"]`);
+  if (!container) return;
+
+  const typeVal = container.querySelector(".manual-type").value;
+  const dateVal = container.querySelector(".manual-date").value;
+  const annoncesInput = container.querySelector(".manual-annonces");
+  const flasheInput = container.querySelector(".manual-flashe");
+
+  if (!dateVal) {
+    alert("Veuillez sélectionner une date.");
+    return;
+  }
+
+  const dateObj = new Date(dateVal);
+  if (isNaN(dateObj)) {
+    alert("Date invalide.");
+    return;
+  }
+
+  const key = `${typeVal}|${dateObj.toISOString()}`;
+  const existingIndex = appData.findIndex(r => `${r.type}|${r.date?.toISOString()}` === key);
+
+  const newRow = {
+    type: typeVal,
+    date: dateObj,
+    colisAnnonces: annoncesInput ? parseInt(annoncesInput.value, 10) || 0 : 0,
+    colisFlashe: parseInt(flasheInput.value, 10) || 0
+  };
+
+  if (existingIndex !== -1) {
+    if (!confirm("Une entrée existe déjà pour ce type et cette date. Voulez-vous la remplacer ?")) return;
+    appData[existingIndex] = newRow;
+  } else {
+    appData.push(newRow);
+  }
+
+  saveToLocalStorage();
+  populateFilters(typeVal);
+  renderSection(typeVal);
+  resetManualForm(sectionType);
+  toggleManualForm(sectionType, false);
+  alert("Donnée enregistrée avec succès.");
+}
+
+/* ============================================================
    ÉCOUTEURS D'ÉVÉNEMENTS
    ============================================================ */
 
@@ -629,6 +706,28 @@ function attachEventListeners() {
     });
   });
 
+  document.querySelectorAll(".btn-add-manual").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const section = btn.dataset.section;
+      toggleManualForm(section, true);
+    });
+  });
+
+  document.querySelectorAll(".btn-manual-save").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const section = btn.dataset.section;
+      handleManualSave(section);
+    });
+  });
+
+  document.querySelectorAll(".btn-manual-cancel").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const section = btn.dataset.section;
+      resetManualForm(section);
+      toggleManualForm(section, false);
+    });
+  });
+
   const resetBtn = document.getElementById("btn-reset-all");
   if (resetBtn) resetBtn.addEventListener("click", clearAllData);
 }
@@ -639,6 +738,7 @@ function attachEventListeners() {
 
 function initApp() {
   initCharts();
+  populateManualTypeSelects();
   attachEventListeners();
 
   if (loadFromLocalStorage()) {
