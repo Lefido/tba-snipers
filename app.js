@@ -521,7 +521,11 @@ function updateTable(sectionType, data) {
     return;
   }
 
-  const sorted = [...filtered].sort((a, b) => (b.date || 0) - (a.date || 0));
+  const sorted = [...filtered].sort((a, b) => {
+    const typeCompare = (a.type || "").localeCompare(b.type || "");
+    if (typeCompare !== 0) return typeCompare;
+    return (a.date || 0) - (b.date || 0);
+  });
 
   sorted.forEach(row => {
     const tr = document.createElement("tr");
