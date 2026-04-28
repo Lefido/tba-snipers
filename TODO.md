@@ -1,33 +1,29 @@
-# TODO - Nouveau modèle : Colis annoncés / Colis Flashé
+# TODO - Modifications et Export Excel
 
 ## Plan détaillé
 
-### 1. `generate_excel.py` ✓
-- **Nouvelles colonnes** : `Type`, `Date`, `Colis annoncés`, `Colis Flashé`
-- Génération de nombres aléatoires réalistes (Colis Flashé ≤ Colis annoncés)
+### 1. `index.html` ✓
+- [x] Ajouter colonne **Actions** (✏️ / 🗑️) dans les 5 tableaux de données brutes
+- [x] Ajouter bouton **📊 Exporter Excel** dans chaque section
+- [x] Ajouter la **modal** HTML globale (ajout / édition)
 
-### 2. `index.html` ✓
-- **Tableaux** : 4 colonnes — `Type`, `Date`, `Colis annoncés`, `Colis Flashé`
-- `colspan="4"` pour les messages vides
+### 2. `style.css` ✓
+- [x] Styles pour la **modal** (overlay, centering, animations)
+- [x] Styles pour les boutons d'action dans les tableaux (edit/delete)
 
 ### 3. `app.js` ✓
-- **Modèle de données** : `{ type, date, colisAnnonces, colisFlashe }`
-- **Parsing Excel** : détection + lecture des 4 colonnes
-- **Regroupement** : somme des valeurs par période (plus compte d'occurrences)
-- **Graphiques ECharts** : 2 séries superposées par section :
-  - *Colis annoncés* — ligne pleine, couleur principale
-  - *Colis Flashé* — ligne pointillée, couleur secondaire
-  - Légende avec les deux séries
-  - Tooltip montrant les deux valeurs
-- **Tableaux HTML** : affichage des 4 colonnes
-- **localStorage** : stockage des 4 champs
+- [x] Variable d'état `editingIndex`
+- [x] Fonction `editRow(index)` — pré-remplit la modal
+- [x] Fonction `deleteRow(index)` — supprime avec confirmation
+- [x] Adapter `updateTable()` — ajouter boutons actions avec `data-index`
+- [x] Fonction `openModal()` — gérer le mode ajout / édition
+- [x] Fonction `closeModal()`
+- [x] Fonction `handleModalSave()` — sauvegarder / modifier
+- [x] Fonction `exportSectionExcel(sectionType)` — export XLSX via SheetJS
+- [x] Écouteurs pour les nouveaux boutons
 
-### 4. Fichiers Excel régénérés ✓
-- `donnees_completes.xlsx`
-- `donnees_fevrier.xlsx`
-- `Exploitation/donnees_exploitation_q1.xlsx`
-- `Exploitation/donnees_exploitation_mars.xlsx`
-
-### 5. `style.css`
-- Aucune modification nécessaire
+### 4. Tests ✓
+- [x] Modifier une ligne existante
+- [x] Supprimer une ligne
+- [x] Exporter les données d'une section en Excel
 

@@ -3,7 +3,8 @@
  * TABLEAU DE BORD ANALYTIQUE — Logique métier
  * ============================================================
  * Gère l'import Excel (SheetJS), la visualisation (ECharts),
- * les filtres, le regroupement, le localStorage et l'export PNG.
+ * les filtres, le regroupement, le localStorage, l'export PNG,
+ * l'édition/suppression des lignes et l'export Excel.
  * Modèle de données : { type, date, colisAnnonces, colisFlashe }
  */
 
@@ -11,7 +12,7 @@
    CONFIGURATION & ÉTAT GLOBAL
    ============================================================ */
 
-/** Types de sections supportés (doit correspondre aux data-type HTML) */
+/** Types de sections supportés */
 const SECTION_TYPES = [
   "Dispersion 14h",
   "Arrivée 14h",
@@ -63,6 +64,12 @@ let appData = [];
 /** Instances ECharts par type */
 const chartInstances = {};
 
+/** Édition en cours : index dans appData, ou null */
+let editingIndex = null;
+
+/** Section courante pour la modal */
+let currentModalSection = null;
+
 /* ============================================================
    UTILITAIRES DE DATE
    ============================================================ */
@@ -93,6 +100,14 @@ function parseNumber(val) {
 function fmtDate(d) {
   if (!d || isNaN(d)) return "—";
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function formatISODate(d) {
+  if (!d || isNaN(d)) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function getWeekNumber(d) {
@@ -507,7 +522,7 @@ function updateTable(sectionType, data) {
   if (!tbody) return;
 
   const isConcentration = sectionType === "Concentration";
-  const colCount = isConcentration ? 3 : 4;
+  const colCount = isConcentration ? 4 : 5;
 
   const filters = getFiltersForSection(sectionType);
   const filtered = filterData(data, filters);
@@ -528,12 +543,17 @@ function updateTable(sectionType, data) {
   });
 
   sorted.forEach(row => {
+    const realIndex = appData.indexOf(row);
     const tr = document.createElement("tr");
     if (isConcentration) {
       tr.innerHTML = `
         <td>${row.type}</td>
         <td>${fmtDate(row.date)}</td>
         <td>${row.colisFlashe}</td>
+        <td>
+          <button class="btn-icon btn-edit" data-index="${realIndex}" title="Modifier">✏️</button>
+          <button class="btn-icon btn-delete" data-index="${realIndex}" title="Supprimer">🗑️</button>
+        </td>
       `;
     } else {
       tr.innerHTML = `
@@ -541,9 +561,20 @@ function updateTable(sectionType, data) {
         <td>${fmtDate(row.date)}</td>
         <td>${row.colisAnnonces}</td>
         <td>${row.colisFlashe}</td>
+        <td>
+          <button class="btn-icon btn-edit" data-index="${realIndex}" title="Modifier">✏️</button>
+          <button class="btn-icon btn-delete" data-index="${realIndex}" title="Supprimer">🗑️</button>
+        </td>
       `;
     }
     tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll(".btn-edit").forEach(btn => {
+    btn.addEventListener("click", () => editRow(parseInt(btn.dataset.index, 10)));
+  });
+  tbody.querySelectorAll(".btn-delete").forEach(btn => {
+    btn.addEventListener("click", () => deleteRow(parseInt(btn.dataset.index, 10)));
   });
 }
 
@@ -576,6 +607,36 @@ function exportChartPNG(sectionType) {
 }
 
 /* ============================================================
+   EXPORT EXCEL PAR SECTION
+   ============================================================ */
+
+function exportSectionExcel(sectionType) {
+  const sectionData = appData.filter(r => r.type === sectionType);
+  if (sectionData.length === 0) {
+    alert("Aucune donnée à exporter pour cette section.");
+    return;
+  }
+
+  const isConcentration = sectionType === "Concentration";
+  const headers = isConcentration
+    ? ["Type", "Date", "Colis Flashé"]
+    : ["Type", "Date", "Colis annoncés", "Colis Flashé"];
+
+  const rows = sectionData.map(row => {
+    const dateStr = fmtDate(row.date);
+    if (isConcentration) {
+      return [row.type, dateStr, row.colisFlashe];
+    }
+    return [row.type, dateStr, row.colisAnnonces, row.colisFlashe];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Données");
+  XLSX.writeFile(wb, `export-${sectionType.replace(/\s+/g, "_").toLowerCase()}.xlsx`);
+}
+
+/* ============================================================
    RÉINITIALISATION
    ============================================================ */
 
@@ -590,7 +651,7 @@ function clearAllData() {
     renderEmptyChart(type);
     const tableId = SECTION_CONFIG[type].table;
     const tbody = document.querySelector(`#${tableId} tbody`);
-    const colCount = type === "Concentration" ? 3 : 4;
+    const colCount = type === "Concentration" ? 4 : 5;
     if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="no-data-message">Aucune donnée — importez un fichier Excel</td></tr>`;
     populateFilters(type);
   });
@@ -605,45 +666,81 @@ function clearAllData() {
 }
 
 /* ============================================================
-   AJOUT MANUEL
+   MODAL — AJOUT / ÉDITION
    ============================================================ */
 
-function populateManualTypeSelects() {
-  document.querySelectorAll(".manual-type").forEach(select => {
-    const section = select.dataset.section;
-    select.innerHTML = "";
-    SECTION_TYPES.forEach(type => {
-      const opt = document.createElement("option");
-      opt.value = type;
-      opt.textContent = type;
-      if (type === section) opt.selected = true;
-      select.appendChild(opt);
-    });
+function openModal(sectionType, editIdx) {
+  currentModalSection = sectionType;
+  editingIndex = editIdx !== undefined ? editIdx : null;
+
+  const overlay = document.getElementById("modal-overlay");
+  const title = document.getElementById("modal-title");
+  const typeSelect = document.getElementById("modal-type");
+  const dateInput = document.getElementById("modal-date");
+  const annoncesInput = document.getElementById("modal-annonces");
+  const flasheInput = document.getElementById("modal-flashe");
+  const annoncesGroup = document.getElementById("modal-annonces-group");
+  const saveBtn = document.getElementById("modal-save");
+
+  typeSelect.innerHTML = "";
+  SECTION_TYPES.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
+    typeSelect.appendChild(opt);
   });
+
+  if (editingIndex !== null) {
+    const row = appData[editingIndex];
+    title.textContent = "Modifier une entrée";
+    typeSelect.value = row.type;
+    dateInput.value = formatISODate(row.date);
+    flasheInput.value = row.colisFlashe;
+    if (row.type === "Concentration") {
+      annoncesGroup.style.display = "none";
+      annoncesInput.value = 0;
+    } else {
+      annoncesGroup.style.display = "flex";
+      annoncesInput.value = row.colisAnnonces;
+    }
+    saveBtn.textContent = "💾 Modifier";
+  } else {
+    title.textContent = "Ajouter une entrée";
+    typeSelect.value = sectionType;
+    dateInput.value = "";
+    flasheInput.value = 0;
+    if (sectionType === "Concentration") {
+      annoncesGroup.style.display = "none";
+      annoncesInput.value = 0;
+    } else {
+      annoncesGroup.style.display = "flex";
+      annoncesInput.value = 0;
+    }
+    saveBtn.textContent = "💾 Valider";
+  }
+
+  typeSelect.addEventListener("change", () => {
+    if (typeSelect.value === "Concentration") {
+      annoncesGroup.style.display = "none";
+    } else {
+      annoncesGroup.style.display = "flex";
+    }
+  });
+
+  overlay.style.display = "flex";
 }
 
-function toggleManualForm(sectionType, show) {
-  const container = document.querySelector(`.manual-form-container[data-section="${sectionType}"]`);
-  if (container) container.style.display = show ? "block" : "none";
+function closeModal() {
+  document.getElementById("modal-overlay").style.display = "none";
+  editingIndex = null;
+  currentModalSection = null;
 }
 
-function resetManualForm(sectionType) {
-  const container = document.querySelector(`.manual-form-container[data-section="${sectionType}"]`);
-  if (!container) return;
-  container.querySelector(".manual-date").value = "";
-  const annoncesInput = container.querySelector(".manual-annonces");
-  if (annoncesInput) annoncesInput.value = "0";
-  container.querySelector(".manual-flashe").value = "0";
-}
-
-function handleManualSave(sectionType) {
-  const container = document.querySelector(`.manual-form-container[data-section="${sectionType}"]`);
-  if (!container) return;
-
-  const typeVal = container.querySelector(".manual-type").value;
-  const dateVal = container.querySelector(".manual-date").value;
-  const annoncesInput = container.querySelector(".manual-annonces");
-  const flasheInput = container.querySelector(".manual-flashe");
+function handleModalSave() {
+  const typeVal = document.getElementById("modal-type").value;
+  const dateVal = document.getElementById("modal-date").value;
+  const annoncesInput = document.getElementById("modal-annonces");
+  const flasheInput = document.getElementById("modal-flashe");
 
   if (!dateVal) {
     alert("Veuillez sélectionner une date.");
@@ -657,28 +754,64 @@ function handleManualSave(sectionType) {
   }
 
   const key = `${typeVal}|${dateObj.toISOString()}`;
-  const existingIndex = appData.findIndex(r => `${r.type}|${r.date?.toISOString()}` === key);
-
-  const newRow = {
-    type: typeVal,
-    date: dateObj,
-    colisAnnonces: annoncesInput ? parseInt(annoncesInput.value, 10) || 0 : 0,
-    colisFlashe: parseInt(flasheInput.value, 10) || 0
-  };
+  const existingIndex = appData.findIndex((r, idx) => idx !== editingIndex && `${r.type}|${r.date?.toISOString()}` === key);
 
   if (existingIndex !== -1) {
     if (!confirm("Une entrée existe déjà pour ce type et cette date. Voulez-vous la remplacer ?")) return;
-    appData[existingIndex] = newRow;
+    appData[existingIndex] = {
+      type: typeVal,
+      date: dateObj,
+      colisAnnonces: annoncesInput && annoncesInput.parentElement.style.display !== "none" ? parseInt(annoncesInput.value, 10) || 0 : 0,
+      colisFlashe: parseInt(flasheInput.value, 10) || 0
+    };
+    if (editingIndex !== null && editingIndex !== existingIndex) {
+      appData.splice(editingIndex, 1);
+    }
+  } else if (editingIndex !== null) {
+    appData[editingIndex] = {
+      type: typeVal,
+      date: dateObj,
+      colisAnnonces: annoncesInput && annoncesInput.parentElement.style.display !== "none" ? parseInt(annoncesInput.value, 10) || 0 : 0,
+      colisFlashe: parseInt(flasheInput.value, 10) || 0
+    };
   } else {
-    appData.push(newRow);
+    appData.push({
+      type: typeVal,
+      date: dateObj,
+      colisAnnonces: annoncesInput && annoncesInput.parentElement.style.display !== "none" ? parseInt(annoncesInput.value, 10) || 0 : 0,
+      colisFlashe: parseInt(flasheInput.value, 10) || 0
+    });
   }
 
   saveToLocalStorage();
   populateFilters(typeVal);
   renderSection(typeVal);
-  resetManualForm(sectionType);
-  toggleManualForm(sectionType, false);
-  alert("Donnée enregistrée avec succès.");
+  if (currentModalSection && currentModalSection !== typeVal) {
+    renderSection(currentModalSection);
+  }
+  closeModal();
+  alert(editingIndex !== null ? "Donnée modifiée avec succès." : "Donnée enregistrée avec succès.");
+}
+
+/* ============================================================
+   ÉDITION & SUPPRESSION
+   ============================================================ */
+
+function editRow(index) {
+  if (index < 0 || index >= appData.length) return;
+  openModal(appData[index].type, index);
+}
+
+function deleteRow(index) {
+  if (index < 0 || index >= appData.length) return;
+  if (!confirm("Voulez-vous vraiment supprimer cette ligne ?")) return;
+
+  const deletedType = appData[index].type;
+  appData.splice(index, 1);
+  saveToLocalStorage();
+  populateFilters(deletedType);
+  renderSection(deletedType);
+  updateStatus(appData.length > 0);
 }
 
 /* ============================================================
@@ -699,6 +832,12 @@ function attachEventListeners() {
     });
   });
 
+  document.querySelectorAll(".btn-export-excel").forEach(btn => {
+    btn.addEventListener("click", () => {
+      exportSectionExcel(btn.dataset.section);
+    });
+  });
+
   document.querySelectorAll(".filters-bar select").forEach(sel => {
     sel.addEventListener("change", () => {
       const section = sel.dataset.section;
@@ -708,28 +847,25 @@ function attachEventListeners() {
 
   document.querySelectorAll(".btn-add-manual").forEach(btn => {
     btn.addEventListener("click", () => {
-      const section = btn.dataset.section;
-      toggleManualForm(section, true);
-    });
-  });
-
-  document.querySelectorAll(".btn-manual-save").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const section = btn.dataset.section;
-      handleManualSave(section);
-    });
-  });
-
-  document.querySelectorAll(".btn-manual-cancel").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const section = btn.dataset.section;
-      resetManualForm(section);
-      toggleManualForm(section, false);
+      openModal(btn.dataset.section, null);
     });
   });
 
   const resetBtn = document.getElementById("btn-reset-all");
   if (resetBtn) resetBtn.addEventListener("click", clearAllData);
+
+  const modalClose = document.getElementById("modal-close-btn");
+  if (modalClose) modalClose.addEventListener("click", closeModal);
+
+  const modalCancel = document.getElementById("modal-cancel");
+  if (modalCancel) modalCancel.addEventListener("click", closeModal);
+
+  const modalSave = document.getElementById("modal-save");
+  if (modalSave) modalSave.addEventListener("click", handleModalSave);
+
+  document.getElementById("modal-overlay").addEventListener("click", e => {
+    if (e.target === document.getElementById("modal-overlay")) closeModal();
+  });
 }
 
 /* ============================================================
@@ -738,7 +874,6 @@ function attachEventListeners() {
 
 function initApp() {
   initCharts();
-  populateManualTypeSelects();
   attachEventListeners();
 
   if (loadFromLocalStorage()) {
@@ -750,7 +885,7 @@ function initApp() {
     SECTION_TYPES.forEach(type => {
       const tableId = SECTION_CONFIG[type].table;
       const tbody = document.querySelector(`#${tableId} tbody`);
-      const colCount = type === "Concentration" ? 3 : 4;
+      const colCount = type === "Concentration" ? 4 : 5;
       if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="no-data-message">Aucune donnée — importez un fichier Excel</td></tr>`;
     });
   }
