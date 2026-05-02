@@ -24,306 +24,27 @@
         <p class="header-subtitle">Visualisation avancée des données temporelles</p>
       </div>
     </div>
-    <nav class="header-nav">
-      <a href="#dispersion-14h">Dispersion 14h</a>
-      <a href="#arrivee-14h">Arrivée 14h</a>
-      <a href="#dispersion-18h">Dispersion 18h</a>
-      <a href="#arrivee-18h">Arrivée 18h</a>
-      <a href="#concentration">Concentration</a>
-    </nav>
-    <div class="header-controls">
+<div class="header-controls">
+      <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
+      <button id="btn-info" class="btn btn-secondary" title="Aide et informations">ℹ️ Aide</button>
+      <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard">💾 Exporter Sauvegarde</button>
+      <label class="btn btn-secondary" title="Restaurer une sauvegarde">
+        📥 Importer Sauvegarde
+        <input type="file" id="btn-import-backup" accept=".json" style="display:none">
+      </label>
       <button id="btn-reset-all" class="btn btn-danger">Réinitialiser toutes les données</button>
       <span id="status-indicator" class="status-badge">Aucune donnée chargée</span>
     </div>
+    <nav class="header-nav">
+      <!-- Liens générés dynamiquement par JS -->
+    </nav>
   </header>
 
   <main class="main-container">
-    <!-- Section Dispersion 14h -->
-    <section id="dispersion-14h" class="dashboard-section" data-type="Dispersion 14h">
-      <div class="section-header">
-        <h2>Dispersion 14h</h2>
-        <div class="section-actions">
-          <label class="btn btn-primary file-label">
-            <span>📁 Importer Excel</span>
-            <input type="file" accept=".xlsx" class="file-input" data-section="Dispersion 14h">
-          </label>
-          <button class="btn btn-secondary btn-export" data-section="Dispersion 14h">📷 Exporter PNG</button>
-          <button class="btn btn-secondary btn-export-excel" data-section="Dispersion 14h">📊 Exporter Excel</button>
-          <button class="btn btn-secondary btn-add-manual" data-section="Dispersion 14h">➕ Ajouter manuellement</button>
-        </div>
-      </div>
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label for="filter-day-d14">Jour</label>
-          <select id="filter-day-d14" class="filter-day" data-section="Dispersion 14h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-month-d14">Mois</label>
-          <select id="filter-month-d14" class="filter-month" data-section="Dispersion 14h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-year-d14">Année</label>
-          <select id="filter-year-d14" class="filter-year" data-section="Dispersion 14h"><option value="">Toutes</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-granularity-d14">Regroupement</label>
-          <select id="filter-granularity-d14" class="filter-granularity" data-section="Dispersion 14h">
-            <option value="day">Jour</option>
-            <option value="week">Semaine</option>
-            <option value="month">Mois</option>
-            <option value="year">Année</option>
-          </select>
-        </div>
-      </div>
-      <div id="chart-dispersion-14h" class="chart-container"></div>
-      <details class="table-details">
-        <summary>Données brutes — Dispersion 14h</summary>
-        <div class="table-wrapper">
-          <table class="data-table" id="table-dispersion-14h">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Colis annoncé</th>
-                <th>Colis Flashé</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </details>
-    </section>
-
-    <!-- Section Arrivée 14h -->
-    <section id="arrivee-14h" class="dashboard-section" data-type="Arrivée 14h">
-      <div class="section-header">
-        <h2>Arrivée 14h</h2>
-        <div class="section-actions">
-          <label class="btn btn-primary file-label">
-            <span>📁 Importer Excel</span>
-            <input type="file" accept=".xlsx" class="file-input" data-section="Arrivée 14h">
-          </label>
-          <button class="btn btn-secondary btn-export" data-section="Arrivée 14h">📷 Exporter PNG</button>
-          <button class="btn btn-secondary btn-export-excel" data-section="Arrivée 14h">📊 Exporter Excel</button>
-          <button class="btn btn-secondary btn-add-manual" data-section="Arrivée 14h">➕ Ajouter manuellement</button>
-        </div>
-      </div>
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label for="filter-day-a14">Jour</label>
-          <select id="filter-day-a14" class="filter-day" data-section="Arrivée 14h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-month-a14">Mois</label>
-          <select id="filter-month-a14" class="filter-month" data-section="Arrivée 14h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-year-a14">Année</label>
-          <select id="filter-year-a14" class="filter-year" data-section="Arrivée 14h"><option value="">Toutes</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-granularity-a14">Regroupement</label>
-          <select id="filter-granularity-a14" class="filter-granularity" data-section="Arrivée 14h">
-            <option value="day">Jour</option>
-            <option value="week">Semaine</option>
-            <option value="month">Mois</option>
-            <option value="year">Année</option>
-          </select>
-        </div>
-      </div>
-      <div id="chart-arrivee-14h" class="chart-container"></div>
-      <details class="table-details">
-        <summary>Données brutes — Arrivée 14h</summary>
-        <div class="table-wrapper">
-          <table class="data-table" id="table-arrivee-14h">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Colis annoncé</th>
-                <th>Colis Flashé</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </details>
-    </section>
-
-    <!-- Section Dispersion 18h -->
-    <section id="dispersion-18h" class="dashboard-section" data-type="Dispersion 18h">
-      <div class="section-header">
-        <h2>Dispersion 18h</h2>
-        <div class="section-actions">
-          <label class="btn btn-primary file-label">
-            <span>📁 Importer Excel</span>
-            <input type="file" accept=".xlsx" class="file-input" data-section="Dispersion 18h">
-          </label>
-          <button class="btn btn-secondary btn-export" data-section="Dispersion 18h">📷 Exporter PNG</button>
-          <button class="btn btn-secondary btn-export-excel" data-section="Dispersion 18h">📊 Exporter Excel</button>
-          <button class="btn btn-secondary btn-add-manual" data-section="Dispersion 18h">➕ Ajouter manuellement</button>
-        </div>
-      </div>
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label for="filter-day-d18">Jour</label>
-          <select id="filter-day-d18" class="filter-day" data-section="Dispersion 18h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-month-d18">Mois</label>
-          <select id="filter-month-d18" class="filter-month" data-section="Dispersion 18h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-year-d18">Année</label>
-          <select id="filter-year-d18" class="filter-year" data-section="Dispersion 18h"><option value="">Toutes</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-granularity-d18">Regroupement</label>
-          <select id="filter-granularity-d18" class="filter-granularity" data-section="Dispersion 18h">
-            <option value="day">Jour</option>
-            <option value="week">Semaine</option>
-            <option value="month">Mois</option>
-            <option value="year">Année</option>
-          </select>
-        </div>
-      </div>
-      <div id="chart-dispersion-18h" class="chart-container"></div>
-      <details class="table-details">
-        <summary>Données brutes — Dispersion 18h</summary>
-        <div class="table-wrapper">
-          <table class="data-table" id="table-dispersion-18h">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Colis annoncé</th>
-                <th>Colis Flashé</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </details>
-    </section>
-
-    <!-- Section Arrivée 18h -->
-    <section id="arrivee-18h" class="dashboard-section" data-type="Arrivée 18h">
-      <div class="section-header">
-        <h2>Arrivée 18h</h2>
-        <div class="section-actions">
-          <label class="btn btn-primary file-label">
-            <span>📁 Importer Excel</span>
-            <input type="file" accept=".xlsx" class="file-input" data-section="Arrivée 18h">
-          </label>
-          <button class="btn btn-secondary btn-export" data-section="Arrivée 18h">📷 Exporter PNG</button>
-          <button class="btn btn-secondary btn-export-excel" data-section="Arrivée 18h">📊 Exporter Excel</button>
-          <button class="btn btn-secondary btn-add-manual" data-section="Arrivée 18h">➕ Ajouter manuellement</button>
-        </div>
-      </div>
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label for="filter-day-a18">Jour</label>
-          <select id="filter-day-a18" class="filter-day" data-section="Arrivée 18h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-month-a18">Mois</label>
-          <select id="filter-month-a18" class="filter-month" data-section="Arrivée 18h"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-year-a18">Année</label>
-          <select id="filter-year-a18" class="filter-year" data-section="Arrivée 18h"><option value="">Toutes</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-granularity-a18">Regroupement</label>
-          <select id="filter-granularity-a18" class="filter-granularity" data-section="Arrivée 18h">
-            <option value="day">Jour</option>
-            <option value="week">Semaine</option>
-            <option value="month">Mois</option>
-            <option value="year">Année</option>
-          </select>
-        </div>
-      </div>
-      <div id="chart-arrivee-18h" class="chart-container"></div>
-      <details class="table-details">
-        <summary>Données brutes — Arrivée 18h</summary>
-        <div class="table-wrapper">
-          <table class="data-table" id="table-arrivee-18h">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Colis annoncé</th>
-                <th>Colis Flashé</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </details>
-    </section>
-
-    <!-- Section Concentration -->
-    <section id="concentration" class="dashboard-section" data-type="Concentration">
-      <div class="section-header">
-        <h2>Concentration</h2>
-        <div class="section-actions">
-          <label class="btn btn-primary file-label">
-            <span>📁 Importer Excel</span>
-            <input type="file" accept=".xlsx" class="file-input" data-section="Concentration">
-          </label>
-          <button class="btn btn-secondary btn-export" data-section="Concentration">📷 Exporter PNG</button>
-          <button class="btn btn-secondary btn-export-excel" data-section="Concentration">📊 Exporter Excel</button>
-          <button class="btn btn-secondary btn-add-manual" data-section="Concentration">➕ Ajouter manuellement</button>
-        </div>
-      </div>
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label for="filter-day-c">Jour</label>
-          <select id="filter-day-c" class="filter-day" data-section="Concentration"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-month-c">Mois</label>
-          <select id="filter-month-c" class="filter-month" data-section="Concentration"><option value="">Tous</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-year-c">Année</label>
-          <select id="filter-year-c" class="filter-year" data-section="Concentration"><option value="">Toutes</option></select>
-        </div>
-        <div class="filter-group">
-          <label for="filter-granularity-c">Regroupement</label>
-          <select id="filter-granularity-c" class="filter-granularity" data-section="Concentration">
-            <option value="day">Jour</option>
-            <option value="week">Semaine</option>
-            <option value="month">Mois</option>
-            <option value="year">Année</option>
-          </select>
-        </div>
-      </div>
-      <div id="chart-concentration" class="chart-container"></div>
-      <details class="table-details">
-        <summary>Données brutes — Concentration</summary>
-        <div class="table-wrapper">
-          <table class="data-table" id="table-concentration">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Colis Flashé</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </details>
-    </section>
+    <!-- Toutes les sections sont générées dynamiquement ici -->
   </main>
 
-  <!-- Modal globale ajout / modification -->
+<!-- Modal globale ajout / modification -->
   <div id="modal-overlay" class="modal-overlay" style="display:none;">
     <div class="modal">
       <div class="modal-header">
@@ -339,14 +60,16 @@
           <label>Date</label>
           <input type="date" id="modal-date">
         </div>
-        <div class="form-group" id="modal-annonces-group">
+        <div class="form-group" id="modal-annonces-group" style="display:none;">
           <label>Colis annoncé</label>
           <input type="number" id="modal-annonces" min="0" value="0">
         </div>
-        <div class="form-group">
+        <div class="form-group" id="modal-flashe-group" style="display:none;">
           <label>Colis Flashé</label>
           <input type="number" id="modal-flashe" min="0" value="0">
         </div>
+        <!-- Container for dynamic fields (custom sections) -->
+        <div id="modal-dynamic-fields"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" id="modal-save">💾 Valider</button>
@@ -355,7 +78,74 @@
     </div>
   </div>
 
+  <!-- Modal d'information / Aide -->
+  <div id="modal-help-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>ℹ️ Aide & Fonctionnement</h3>
+        <button class="modal-close" onclick="closeHelpModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <h4>📊 Fichiers Excel (.xlsx)</h4>
+        <p>Utilisé pour importer des données brutes dans une section. Structure requise :</p>
+        <ul style="margin-left: 20px; margin-bottom: 15px;">
+          <li><strong>Type :</strong> Doit correspondre exactement au nom de la section.</li>
+          <li><strong>Date :</strong> Format date standard (JJ/MM/AAAA).</li>
+          <li><strong>Colonnes de valeurs :</strong> Noms identiques aux champs créés.</li>
+        </ul>
+        <h4>💾 Fichiers de Sauvegarde (.json)</h4>
+        <p>Contient l'intégralité du tableau de bord (données + configuration des sections). Idéal pour transférer votre travail sur un autre poste ou faire une sauvegarde complète.</p>
+        <p style="color: #64748b; font-size: 0.9em; margin-top: 10px;">Note : L'importation d'une sauvegarde remplace la configuration actuelle.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeHelpModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal création/édition de section -->
+  <div id="modal-section-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal modal-section">
+      <div class="modal-header">
+        <h3 id="modal-section-title">Ajouter une section</h3>
+        <button class="modal-close" id="modal-section-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nom de la section</label>
+          <input type="text" id="modal-section-name" placeholder="Ex: Performance Hebdomadaire">
+        </div>
+        <div class="form-group">
+          <label>Type de graphique</label>
+          <select id="modal-section-chart-type">
+            <option value="line">📈 Ligne</option>
+            <option value="bar">📊 Barres</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Champs de données</label>
+          <div id="section-fields-container" class="section-fields-container">
+            <!-- Champs dynamiques injectés par JS -->
+          </div>
+          <button type="button" id="btn-add-field" class="btn btn-secondary btn-sm">+ Ajouter un champ</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="modal-section-save">💾 Créer la section</button>
+        <button class="btn btn-secondary" id="modal-section-cancel">❌ Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template pour les champs dynamiques -->
+  <template id="field-template">
+    <div class="field-row">
+      <input type="text" class="field-name" placeholder="Nom du champ" value="Valeur">
+      <input type="number" class="field-value" placeholder="Valeur" min="0" value="0">
+      <button type="button" class="btn-remove-field" title="Supprimer">&times;</button>
+    </div>
+  </template>
+
   <script src="app.js"></script>
 </body>
 </html>
-
