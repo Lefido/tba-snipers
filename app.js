@@ -460,7 +460,7 @@ function initCharts() {
       chartInstances[type].dispose();
     }
     
-    chartInstances[type] = echarts.init(dom);
+    chartInstances[type] = echarts.init(dom, null, { renderer: 'canvas', useDirtyRect: false });
     renderEmptyChart(type);
     
     // Observer pour le redimensionnement automatique (ex: ouverture details)
@@ -537,13 +537,16 @@ function updateChart(sectionType, data) {
       symbol: 'circle',
       symbolSize: 8,
       data: fieldData,
-      itemStyle: { color: fieldColor, borderColor: '#fff', borderWidth: 2 },
+      itemStyle: chartType === "bar" ? { 
+        color: fieldColor,
+        borderRadius: [6, 6, 0, 0] // Arrondis sur les barres
+      } : { color: fieldColor, borderColor: '#fff', borderWidth: 2 },
       lineStyle: chartType === "line" ? { 
         width: 4, 
         color: fieldColor,
-        shadowBlur: 10,
-        shadowColor: 'rgba(0,0,0,0.15)',
-        shadowOffsetY: 8
+        shadowBlur: 12,
+        shadowColor: 'rgba(0,0,0,0.2)',
+        shadowOffsetY: 6
       } : undefined,
       areaStyle: chartType === "line" ? {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -551,7 +554,7 @@ function updateChart(sectionType, data) {
           { offset: 1, color: fieldColor + '00' }
         ])
       } : undefined,
-      barMaxWidth: chartType === "bar" ? 50 : undefined,
+      barMaxWidth: chartType === "bar" ? 40 : undefined,
       emphasis: { focus: 'series' }
     });
   });
@@ -1213,6 +1216,7 @@ function loadCustomSections() {
       sectionOrder = JSON.parse(orderRaw);
     } else {
       sectionOrder = customSections.map(s => s.id);
+      saveCustomSections();
     }
     // Synchroniser SECTION_TYPES
     SECTION_TYPES = customSections.map(s => s.name);
@@ -1456,13 +1460,16 @@ function renderNavigation() {
   const nav = document.querySelector(".header-nav");
   if (!nav) return;
   nav.innerHTML = "";
-  
-  customSections.forEach(section => {
-    const slug = sectionTypeToSlug(section.name);
-    const link = document.createElement("a");
-    link.href = `#${slug}`;
-    link.textContent = section.name;
-    nav.appendChild(link);
+
+  sectionOrder.forEach(id => {
+    const section = customSections.find(s => s.id === id);
+    if (section) {
+      const slug = sectionTypeToSlug(section.name);
+      const link = document.createElement("a");
+      link.href = `#${slug}`;
+      link.textContent = section.name;
+      nav.appendChild(link);
+    }
   });
 }
 
@@ -1597,14 +1604,13 @@ function closeHelpModal() {
 function initApp() {
   // Charger les sections personnalisées depuis localStorage
   loadCustomSections();
+  renderNavigation(); // Restaurer la navigation au démarrage
   
-  // Correction : Créer les sections personnalisées selon l'ordre sauvegardé
-  if (sectionOrder.length > 0) {
-    sectionOrder.forEach(id => {
-      const section = customSections.find(s => s.id === id);
-      if (section) createSectionElement(section);
-    });
-  }
+  // Créer les sections personnalisées selon l'ordre sauvegardé
+  sectionOrder.forEach(id => {
+    const section = customSections.find(s => s.id === id);
+    if (section) createSectionElement(section);
+  });
 
   initCharts();
   attachEventListeners();
