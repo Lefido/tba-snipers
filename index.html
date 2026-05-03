@@ -24,20 +24,28 @@
         <p class="header-subtitle">Visualisation avancée des données temporelles</p>
       </div>
     </div>
-<div class="header-controls">
-      <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
-      <button id="btn-info" class="btn btn-secondary" title="Aide et informations">ℹ️ Aide</button>
-      <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard">💾 Exporter Sauvegarde</button>
-      <label class="btn btn-secondary" title="Restaurer une sauvegarde">
-        📥 Importer Sauvegarde
-        <input type="file" id="btn-import-backup" accept=".json" style="display:none">
-      </label>
-      <button id="btn-reset-all" class="btn btn-danger">Réinitialiser toutes les données</button>
-      <span id="status-indicator" class="status-badge">Aucune donnée chargée</span>
+    <button class="burger-btn" id="burger-btn" aria-label="Menu mobile">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="header-menu" id="header-menu">
+      <div class="mobile-section-title">Navigation</div>
+      <nav class="header-nav">
+        <!-- Liens générés dynamiquement par JS -->
+      </nav>
+      <div class="mobile-section-title">Actions & Paramètres</div>
+      <div class="header-controls">
+        <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
+        <button id="btn-info" class="btn btn-secondary" title="Aide et informations">ℹ️ Aide</button>
+        <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard">💾 Exporter Sauvegarde</button>
+        <label class="btn btn-secondary" title="Restaurer une sauvegarde">
+          📥 Importer Sauvegarde
+          <input type="file" id="btn-import-backup" accept=".json" style="display:none">
+        </label>
+        <button id="btn-reset-all" class="btn btn-danger">Réinitialiser toutes les données</button>
+      </div>
     </div>
-    <nav class="header-nav">
-      <!-- Liens générés dynamiquement par JS -->
-    </nav>
   </header>
 
   <main class="main-container">

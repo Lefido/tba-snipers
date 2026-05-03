@@ -646,6 +646,16 @@ function updateTable(sectionType, data) {
   const filters = getFiltersForSection(sectionType);
   const filtered = filterData(data, filters);
 
+  const badge = document.getElementById(`badge-${sectionTypeToSlug(sectionType)}`);
+  if (badge) {
+    badge.textContent = `${filtered.length} ligne${filtered.length > 1 ? 's' : ''}`;
+    if (filtered.length > 0) {
+      badge.classList.add("active");
+    } else {
+      badge.classList.remove("active");
+    }
+  }
+
   tbody.innerHTML = "";
   const colCount = fieldNames.length + 3; // Type + Date + Actions = 3
 
@@ -1088,6 +1098,16 @@ function attachEventListeners() {
   const resetBtn = document.getElementById("btn-reset-all");
   if (resetBtn) resetBtn.addEventListener("click", clearAllData);
 
+  // Menu Burger
+  const burgerBtn = document.getElementById("burger-btn");
+  const headerMenu = document.getElementById("header-menu");
+  if (burgerBtn && headerMenu) {
+    burgerBtn.addEventListener("click", () => {
+      burgerBtn.classList.toggle("open");
+      headerMenu.classList.toggle("active");
+    });
+  }
+
   // Bouton Info
   const btnInfo = document.getElementById("btn-info");
   if (btnInfo) btnInfo.addEventListener("click", () => {
@@ -1421,7 +1441,10 @@ function createSectionElement(section) {
     </div>
     <div id="chart-${sectionId}" class="chart-container"></div>
     <details class="table-details">
-      <summary>Données brutes — ${section.name}</summary>
+      <summary>
+        <span>Données brutes — ${section.name}</span>
+        <span id="badge-${sectionId}" class="status-badge">0 ligne</span>
+      </summary>
       <div class="table-wrapper">
         <table class="data-table" id="table-${sectionId}">
           <thead>
@@ -1468,6 +1491,17 @@ function renderNavigation() {
       const link = document.createElement("a");
       link.href = `#${slug}`;
       link.textContent = section.name;
+      
+      // Fermer le menu sur mobile lors du clic
+      link.addEventListener("click", () => {
+        const burgerBtn = document.getElementById("burger-btn");
+        const headerMenu = document.getElementById("header-menu");
+        if (burgerBtn && headerMenu && headerMenu.classList.contains("active")) {
+          burgerBtn.classList.remove("open");
+          headerMenu.classList.remove("active");
+        }
+      });
+      
       nav.appendChild(link);
     }
   });
