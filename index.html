@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <!-- ECharts -->
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <!-- SheetJS -->
@@ -24,26 +26,30 @@
         <p class="header-subtitle">Visualisation avancée des données temporelles</p>
       </div>
     </div>
+    <button id="btn-info" class="btn btn-secondary btn-info-top" title="Aide et informations"><i class="fa-solid fa-circle-info"></i> Aide</button>
     <button class="burger-btn" id="burger-btn" aria-label="Menu mobile">
       <span></span>
       <span></span>
       <span></span>
     </button>
     <div class="header-menu" id="header-menu">
-      <div class="mobile-section-title">Navigation</div>
-      <nav class="header-nav">
-        <!-- Liens générés dynamiquement par JS -->
-      </nav>
-      <div class="mobile-section-title">Actions & Paramètres</div>
-      <div class="header-controls">
-        <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
-        <button id="btn-info" class="btn btn-secondary" title="Aide et informations">ℹ️ Aide</button>
-        <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard">💾 Exporter Sauvegarde</button>
-        <label class="btn btn-secondary" title="Restaurer une sauvegarde">
-          📥 Importer Sauvegarde
-          <input type="file" id="btn-import-backup" accept=".json" style="display:none">
-        </label>
-        <button id="btn-reset-all" class="btn btn-danger">Réinitialiser toutes les données</button>
+      <div class="nav-container">
+        <div class="mobile-section-title">Navigation</div>
+        <nav class="header-nav">
+          <!-- Liens générés dynamiquement par JS -->
+        </nav>
+      </div>
+      <div class="controls-container">
+        <div class="mobile-section-title">Actions & Paramètres</div>
+        <div class="header-controls">
+          <button id="btn-add-section" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Ajouter une section</button>
+          <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard"><i class="fa-solid fa-file-export"></i> Exporter Sauvegarde</button>
+          <label class="btn btn-secondary" title="Restaurer une sauvegarde">
+            <i class="fa-solid fa-file-import"></i> Importer Sauvegarde
+            <input type="file" id="btn-import-backup" accept=".json" style="display:none">
+          </label>
+          <button id="btn-reset-all" class="btn btn-danger"><i class="fa-solid fa-trash-can"></i> Réinitialiser</button>
+        </div>
       </div>
     </div>
   </header>
@@ -57,7 +63,7 @@
     <div class="modal">
       <div class="modal-header">
         <h3 id="modal-title">Ajouter une donnée</h3>
-        <button class="modal-close" id="modal-close-btn">&times;</button>
+        <button class="modal-close" id="modal-close-btn"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -80,8 +86,8 @@
         <div id="modal-dynamic-fields"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" id="modal-save">💾 Valider</button>
-        <button class="btn btn-secondary" id="modal-cancel">❌ Annuler</button>
+        <button class="btn btn-primary" id="modal-save"><i class="fa-solid fa-floppy-disk"></i> Valider</button>
+        <button class="btn btn-secondary" id="modal-cancel"><i class="fa-solid fa-xmark"></i> Annuler</button>
       </div>
     </div>
   </div>
@@ -91,7 +97,7 @@
     <div class="modal modal-section">
       <div class="modal-header">
         <h3 id="modal-section-title">Ajouter une section</h3>
-        <button class="modal-close" id="modal-section-close-btn">&times;</button>
+        <button class="modal-close" id="modal-section-close-btn"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -101,8 +107,8 @@
         <div class="form-group">
           <label>Type de graphique</label>
           <select id="modal-section-chart-type">
-            <option value="line">📈 Ligne</option>
-            <option value="bar">📊 Barres</option>
+            <option value="line">Ligne</option>
+            <option value="bar">Barres</option>
           </select>
         </div>
         <div class="form-group">
@@ -110,12 +116,59 @@
           <div id="section-fields-container" class="section-fields-container">
             <!-- Champs dynamiques injectés par JS -->
           </div>
-          <button type="button" id="btn-add-field" class="btn btn-secondary btn-sm">+ Ajouter un champ</button>
+          <button type="button" id="btn-add-field" class="btn btn-secondary btn-sm"><i class="fa-solid fa-plus"></i> Ajouter un champ</button>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" id="modal-section-save">💾 Créer la section</button>
-        <button class="btn btn-secondary" id="modal-section-cancel">❌ Annuler</button>
+        <button class="btn btn-primary" id="modal-section-save"><i class="fa-solid fa-floppy-disk"></i> Créer la section</button>
+        <button class="btn btn-secondary" id="modal-section-cancel"><i class="fa-solid fa-xmark"></i> Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal d'Aide -->
+  <div id="modal-help-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Aide et Informations</h3>
+        <button class="modal-close" onclick="document.getElementById('modal-help-overlay').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <h4>🚀 Bienvenue sur le Tableau de Bord</h4>
+          <p>Cet outil permet d'analyser vos flux de colis via des graphiques dynamiques et des tableaux de données persistants (LocalStorage).</p>
+        </div>
+
+        <div class="help-section">
+          <h4>🛠️ Barre d'Actions Principale</h4>
+          <ul>
+            <li><strong><i class="fa-solid fa-plus"></i> Ajouter une section :</strong> Créez un nouveau graphique. Vous pouvez définir le type (Lignes/Barres) et créer des champs de données personnalisés avec leurs propres couleurs.</li>
+            <li><strong><i class="fa-solid fa-file-export"></i> Exporter Sauvegarde :</strong> Télécharge un fichier <code>.json</code> contenant TOUTES vos sections et vos données. Idéal pour le partage ou le backup.</li>
+            <li><strong><i class="fa-solid fa-file-import"></i> Importer Sauvegarde :</strong> Restaure votre dashboard à partir d'un fichier JSON précédemment exporté.</li>
+            <li><strong><i class="fa-solid fa-trash-can"></i> Réinitialiser :</strong> Efface l'intégralité des données stockées dans votre navigateur.</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h4>📊 Contrôles des Sections</h4>
+          <ul>
+            <li><strong><i class="fa-solid fa-plus"></i> Ajouter :</strong> Ouvre un formulaire pour saisir manuellement une nouvelle date et ses valeurs.</li>
+            <li><strong><i class="fa-solid fa-file-excel"></i> Importer Excel :</strong> Charge des données en masse. Le fichier doit contenir une colonne "Type" (nom de la section) et "Date".</li>
+            <li><strong><i class="fa-solid fa-file-excel"></i> Exporter Excel :</strong> Génère un tableur propre pour la section actuelle.</li>
+            <li><strong><i class="fa-solid fa-image"></i> Exporter PNG :</strong> Enregistre le graphique affiché sous forme d'image.</li>
+            <li><strong><i class="fa-solid fa-pen-to-square"></i> Modifier :</strong> Permet de renommer la section ou de changer la configuration des champs.</li>
+            <li><strong><i class="fa-solid fa-arrow-up"></i> / <i class="fa-solid fa-arrow-down"></i> :</strong> Réorganise l'ordre d'affichage des sections sur votre écran.</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h4>💡 Astuces</h4>
+          <p>Sous chaque graphique, le volet <strong>"Données brutes"</strong> vous permet de consulter l'historique complet. Utilisez les icônes de modification et de suppression pour corriger des erreurs de saisie.</p>
+          <p>Le menu <strong>Navigation</strong> dans le header vous permet de vous déplacer rapidement vers une section spécifique.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="document.getElementById('modal-help-overlay').style.display='none'">J'ai compris !</button>
       </div>
     </div>
   </div>
@@ -125,7 +178,7 @@
     <div class="field-row">
       <input type="text" class="field-name" placeholder="Nom du champ" value="Valeur">
       <input type="number" class="field-value" placeholder="Valeur" min="0" value="0">
-      <button type="button" class="btn-remove-field" title="Supprimer">&times;</button>
+      <button type="button" class="btn-remove-field" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
     </div>
   </template>
 

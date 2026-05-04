@@ -696,8 +696,8 @@ function updateTable(sectionType, data) {
     
     cellsHtml += `
       <td>
-        <button class="btn-icon btn-edit" data-index="${realIndex}" title="Modifier">✏️</button>
-        <button class="btn-icon btn-delete" data-index="${realIndex}" title="Supprimer">🗑️</button>
+        <button class="btn-icon btn-edit" data-index="${realIndex}" title="Modifier"><i class="fa-solid fa-pen-to-square"></i></button>
+        <button class="btn-icon btn-delete" data-index="${realIndex}" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
       </td>
     `;
     
@@ -863,7 +863,7 @@ function openModal(sectionType, editIdx) {
       flasheInput.value = row.colisFlashe;
       if (dynamicFieldsContainer) dynamicFieldsContainer.innerHTML = "";
     }
-    saveBtn.textContent = "💾 Modifier";
+    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Modifier';
   } else {
     title.textContent = "Ajouter une entrée";
     typeSelect.value = sectionType;
@@ -889,7 +889,7 @@ function openModal(sectionType, editIdx) {
       flasheInput.value = 0;
       if (dynamicFieldsContainer) dynamicFieldsContainer.innerHTML = "";
     }
-    saveBtn.textContent = "💾 Valider";
+    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Valider';
   }
 
 // Check if the selected type is a custom section
@@ -1284,11 +1284,11 @@ const nameInput = document.getElementById("modal-section-name");
       (section.fields || []).forEach(f => {
         addDynamicField(f.name, f.color);
       });
-      saveBtn.textContent = "💾 Modifier";
+      saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Modifier';
     }
   } else {
-    title.textContent = "Créer une nouvelle section";
-    saveBtn.textContent = "➕ Créer";
+    title.innerHTML = '<i class="fa-solid fa-plus"></i> Créer une nouvelle section';
+    saveBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Créer';
   }
 
   overlay.style.display = "flex";
@@ -1311,7 +1311,7 @@ function addDynamicField(name = "", color = "#2563EB") {
   div.innerHTML = `
     <input type="text" class="field-name-input" placeholder="Nom du champ" value="${name}" style="flex:1">
     <input type="color" class="field-color-input" value="${color}" style="width:50px">
-    <button type="button" class="btn-icon btn-delete remove-field-btn" title="Supprimer">🗑️</button>
+    <button type="button" class="btn-icon btn-delete remove-field-btn" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
   `;
 
   div.querySelector(".remove-field-btn").addEventListener("click", () => {
@@ -1403,17 +1403,17 @@ function createSectionElement(section) {
     <div class="section-header">
       <h2>${section.name}</h2>
       <div class="section-actions">
-        <button class="btn btn-secondary btn-edit-section" title="Modifier la section">✏️ Modifier</button>
-        <button class="btn btn-secondary btn-move-up" title="Monter">↑</button>
-        <button class="btn btn-secondary btn-move-down" title="Descendre">↓</button>
-        <button class="btn btn-secondary btn-delete-section" title="Supprimer la section">🗑️</button>
+        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> Ajouter</button>
         <label class="btn btn-primary file-label">
-          <span>📁 Importer Excel</span>
+          <span><i class="fa-solid fa-file-excel"></i> Importer Excel</span>
           <input type="file" accept=".xlsx" class="file-input" data-section="${section.name}">
         </label>
-        <button class="btn btn-secondary btn-export" data-section="${section.name}">📷 Exporter PNG</button>
-        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}">📊 Exporter Excel</button>
-        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}">➕ Ajouter manuellement</button>
+        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}"><i class="fa-solid fa-file-excel"></i> Exporter Excel</button>
+        <button class="btn btn-secondary btn-export" data-section="${section.name}"><i class="fa-solid fa-image"></i> Exporter PNG</button>
+        <button class="btn btn-secondary btn-edit-section" title="Paramètres de la section"><i class="fa-solid fa-pen-to-square"></i> Modifier</button>
+        <button class="btn btn-secondary btn-move-up" title="Monter"><i class="fa-solid fa-arrow-up"></i></button>
+        <button class="btn btn-secondary btn-move-down" title="Descendre"><i class="fa-solid fa-arrow-down"></i></button>
+        <button class="btn btn-secondary btn-delete-section" title="Supprimer la section"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     </div>
     <div class="filters-bar">

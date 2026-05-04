@@ -84,6 +84,11 @@ body {
   margin-top: 2px;
 }
 
+.btn-info-top {
+  margin-left: auto;
+  margin-right: 15px;
+}
+
 .burger-btn {
   display: none;
   flex-direction: column;
@@ -119,9 +124,12 @@ body {
 
 .header-menu {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  flex: 1 1 100%;
+  width: 100%;
+  margin-top: 12px;
 }
 
 .mobile-section-title {
@@ -154,11 +162,21 @@ body {
   border-color: var(--primary-light);
 }
 
+.nav-container, .controls-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
 .header-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
 }
 
 .status-badge {
@@ -490,7 +508,7 @@ body {
   .header-menu {
     display: none;
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
     width: 100%;
     margin-top: 16px;
     gap: 16px;
@@ -501,6 +519,7 @@ body {
   .header-menu.active {
     display: flex;
   }
+
 
   .mobile-section-title {
     display: block;
@@ -551,15 +570,41 @@ body {
   .section-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+  }
+
+  .section-actions {
+    justify-content: flex-start;
+    width: auto;
+    flex: 1;
+    gap: 6px;
+  }
+
+  .section-actions {
+    justify-content: flex-start;
+    width: auto; /* Permet aux boutons de ne pas prendre toute la largeur */
+    flex: initial; /* Annule le flex: 1 qui pouvait étirer le conteneur */
+    gap: 8px; /* Ajuste le gap */
+  }
+
+  .section-actions .btn,
+  .section-actions .file-label {
+    flex: 0 1 auto; /* Les boutons prennent leur largeur naturelle et s'enroulent */
+    padding: 8px 12px; /* Réduit le padding */
+    font-size: 0.75rem; /* Réduit la taille de la police */
+    height: 36px; /* Ajuste la hauteur */
   }
 
   .filters-bar {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row; /* Permet aux filtres de s'aligner horizontalement */
+    flex-wrap: wrap; /* Permet aux filtres de passer à la ligne */
+    gap: 10px; /* Réduit l'espacement entre les filtres */
+    padding: 12px; /* Réduit le padding de la barre de filtres */
   }
 
   .filter-group {
-    min-width: 100%;
+    flex: 1 1 calc(50% - 5px); /* Deux colonnes de filtres */
+    min-width: 120px; /* Largeur minimale pour chaque filtre */
   }
 
   .chart-container {
@@ -569,10 +614,57 @@ body {
   .data-table th,
   .data-table td {
     padding: 10px 12px;
+    font-size: 0.75rem; /* Réduit la taille de la police dans les tableaux */
+  }
+
+  .filter-group label {
+    font-size: 0.7rem; /* Taille de police plus petite pour les labels de filtre */
+  }
+
+  .filter-group select {
+    font-size: 0.8rem; /* Taille de police plus petite pour les sélecteurs de filtre */
+    padding: 6px 10px; /* Padding réduit pour les sélecteurs */
   }
 }
 
 @media (max-width: 480px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .section-header h2 {
+    font-size: 1.1rem;
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+
+  .section-actions .btn,
+  .section-actions .file-label {
+    padding: 6px 10px; /* Padding encore plus réduit */
+    font-size: 0.7rem; /* Police encore plus petite */
+    height: 32px; /* Hauteur ajustée */
+  }
+
+  .section-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  
+  .filters-bar {
+    gap: 8px; /* Espacement encore plus réduit */
+    padding: 8px; /* Padding encore plus réduit */
+  }
+
+  .filter-group {
+    flex: 1 1 calc(50% - 4px); /* Deux colonnes de filtres */
+    min-width: 100px; /* Largeur minimale ajustée */
+  }
+
   .header-content h1 {
     font-size: 1.25rem;
   }
@@ -580,10 +672,14 @@ body {
   .chart-container {
     height: 260px;
   }
+  
+  .filter-group label {
+    font-size: 0.65rem; /* Police encore plus petite pour les labels */
+  }
 
-  .btn {
-    padding: 8px 14px;
-    font-size: 0.8rem;
+  .filter-group select {
+    font-size: 0.75rem; /* Police encore plus petite pour les sélecteurs */
+    padding: 5px 8px; /* Padding encore plus réduit */
   }
 }
 
@@ -611,6 +707,7 @@ body {
   max-width: 480px;
   display: flex;
   flex-direction: column;
+  max-height: 90vh;
   overflow: hidden;
   animation: slideUp 0.25s ease;
 }
@@ -651,10 +748,41 @@ body {
   color: var(--danger);
 }
 
+.help-section {
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.help-section h4 {
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.help-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.help-section li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.help-section li i {
+  width: 20px;
+  color: var(--secondary);
+  margin-right: 5px;
+  text-align: center;
+}
+
 .modal-body {
   padding: 20px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   gap: 14px;
 }
 
@@ -1221,6 +1349,3 @@ body {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
-
-
