@@ -68,6 +68,9 @@ const CUSTOM_SECTIONS_KEY = "agc_custom_sections";
 /** Clé localStorage pour l'ordre des sections */
 const SECTION_ORDER_KEY = "agc_section_order";
 
+/** Clé localStorage pour les filtres */
+const FILTERS_STORAGE_KEY = "agc_dashboard_filters";
+
 /** Clé localStorage */
 const STORAGE_KEY = "agc_dashboard_data";
 
@@ -302,12 +305,51 @@ function handleFileImport(event, sectionType) {
 
 function getFiltersForSection(sectionType) {
   const slug = sectionTypeToSlug(sectionType);
+  const yearContainer = document.getElementById(`filter-year-${slug}`);
+  const selectedYears = yearContainer ? Array.from(yearContainer.querySelectorAll('input:checked')).map(cb => cb.value) : [];
+
   return {
     day: document.getElementById(`filter-day-${slug}`)?.value || "",
     month: document.getElementById(`filter-month-${slug}`)?.value || "",
-    year: document.getElementById(`filter-year-${slug}`)?.value || "",
+    years: selectedYears,
     granularity: document.getElementById(`filter-granularity-${slug}`)?.value || "day"
   };
+}
+
+/** Sauvegarde l'état des filtres pour toutes les sections */
+function saveFiltersState() {
+  const state = {};
+  SECTION_TYPES.forEach(type => {
+    state[type] = getFiltersForSection(type);
+  });
+  localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(state));
+}
+
+/** Restaure l'état des filtres depuis le localStorage */
+function loadFiltersState() {
+  try {
+    const raw = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    
+    SECTION_TYPES.forEach(type => {
+      const filters = state[type];
+      if (!filters) return;
+      const slug = sectionTypeToSlug(type);
+      
+      if (document.getElementById(`filter-day-${slug}`)) document.getElementById(`filter-day-${slug}`).value = filters.day;
+      if (document.getElementById(`filter-month-${slug}`)) document.getElementById(`filter-month-${slug}`).value = filters.month;
+      if (document.getElementById(`filter-granularity-${slug}`)) document.getElementById(`filter-granularity-${slug}`).value = filters.granularity;
+      
+      // Pour les années (checkboxes)
+      const container = document.getElementById(`filter-year-${slug}`);
+      if (container && filters.years) {
+        container.querySelectorAll('input').forEach(cb => {
+          cb.checked = filters.years.includes(cb.value);
+        });
+      }
+    });
+  } catch (e) { console.error("Erreur restauration filtres:", e); }
 }
 
 function sectionTypeToSlug(type) {
@@ -323,7 +365,12 @@ function sectionTypeToSlug(type) {
 function filterData(data, filters) {
   return data.filter(row => {
     if (!row.date || isNaN(row.date)) return false;
-    if (filters.year && String(row.date.getFullYear()) !== filters.year) return false;
+    
+    // Si des années sont cochées, on filtre. Sinon on garde tout.
+    if (filters.years && filters.years.length > 0) {
+      if (!filters.years.includes(String(row.date.getFullYear()))) return false;
+    }
+
     if (filters.month) {
       const monthStr = String(row.date.getMonth() + 1).padStart(2, "0");
       if (monthStr !== filters.month) return false;
@@ -346,7 +393,7 @@ function getFieldNamesForSection(sectionType) {
   return sectionType === "Concentration" ? ["colisFlashe"] : ["colisAnnonces", "colisFlashe"];
 }
 
-function groupDataDouble(filteredData, granularity, sectionType) {
+function groupDataDouble(filteredData, granularity, sectionType, forceYearOverlay = false) {
   const map = new Map();
   
   // Get field names for this section type
@@ -357,19 +404,21 @@ function groupDataDouble(filteredData, granularity, sectionType) {
     if (!d || isNaN(d)) return;
     
     let key;
+    const year = d.getFullYear();
     switch (granularity) {
       case "week":
-        key = `${d.getFullYear()}-S${String(getWeekNumber(d)).padStart(2, "0")}`;
+        // En mode overlay, on ne garde que le numéro de semaine
+        key = forceYearOverlay ? `Sem. ${String(getWeekNumber(d)).padStart(2, "0")}` : `${year}-S${String(getWeekNumber(d)).padStart(2, "0")}`;
         break;
       case "month":
-        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        key = forceYearOverlay ? d.toLocaleDateString('fr-FR', {month: 'long'}) : `${year}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         break;
       case "year":
-        key = String(d.getFullYear());
+        key = String(year);
         break;
       case "day":
       default:
-        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        key = forceYearOverlay ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : `${year}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     }
     
     if (!map.has(key)) {
@@ -393,7 +442,10 @@ function groupDataDouble(filteredData, granularity, sectionType) {
     });
   });
   
-  const sorted = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  // Tri intelligent : si c'est des mois, on trie par ordre chronologique de mois, pas alphabétique
+  const sorted = Array.from(map.entries()).sort((a, b) => {
+    return a[0].localeCompare(b[0], undefined, {numeric: true});
+  });
   
   // Return structured data for chart
   const result = { categories: sorted.map(e => e[0]) };
@@ -425,10 +477,29 @@ function populateFilters(sectionType) {
     }
   });
 
+  const populateYearCheckboxes = (id, values) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const rawState = localStorage.getItem(FILTERS_STORAGE_KEY);
+    const savedYears = rawState ? (JSON.parse(rawState)[sectionType]?.years || []) : [];
+    
+    sel.innerHTML = '';
+    Array.from(values).sort().forEach(v => {
+      const label = document.createElement("label");
+      label.className = "checkbox-item";
+      const isChecked = savedYears.includes(v) ? 'checked' : '';
+      label.innerHTML = `<input type="checkbox" value="${v}" ${isChecked}> <span>${v}</span>`;
+      label.querySelector('input').addEventListener('change', () => renderSection(sectionType));
+      sel.appendChild(label);
+    });
+  };
+
   const populateSelect = (id, values) => {
     const sel = document.getElementById(id);
     if (!sel) return;
-    const current = sel.value;
+    const rawState = localStorage.getItem(FILTERS_STORAGE_KEY);
+    const savedVal = rawState ? JSON.parse(rawState)[sectionType]?.[id.split('-')[1]] : "";
+
     sel.innerHTML = '<option value="">Tous</option>';
     Array.from(values).sort().forEach(v => {
       const opt = document.createElement("option");
@@ -436,12 +507,12 @@ function populateFilters(sectionType) {
       opt.textContent = v;
       sel.appendChild(opt);
     });
-    if (Array.from(values).includes(current)) sel.value = current;
+    if (savedVal && Array.from(values).includes(savedVal)) sel.value = savedVal;
   };
 
   populateSelect(`filter-day-${slug}`, days);
   populateSelect(`filter-month-${slug}`, months);
-  populateSelect(`filter-year-${slug}`, years);
+  populateYearCheckboxes(`filter-year-${slug}`, years);
 }
 
 /* ============================================================
@@ -503,61 +574,94 @@ function updateChart(sectionType, data) {
   }
 
   const filters = getFiltersForSection(sectionType);
-  const filtered = filterData(data, filters);
-  const grouped = groupDataDouble(filtered, filters.granularity, sectionType);
+  const isComparing = filters.years.length > 1;
+  
+  const cfg = SECTION_CONFIG[sectionType];
+  const customSec = customSections.find(s => s.name === sectionType);
+  const chartType = customSec ? customSec.chartType : "line";
+  const fields = customSec ? customSec.fields : (sectionType === "Concentration" ? [{name:"colisFlashe", color:"#D97706"}] : [{name:"colisAnnonces", color:"#2563EB"}, {name:"colisFlashe", color:"#93C5FD"}]);
 
-  if (grouped.categories.length === 0) {
+  // Palette haute visibilité pour la comparaison
+  const comparisonPalette = [
+    '#2563EB', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', 
+    '#06B6D4', '#EC4899', '#F97316', '#14B8A6', '#6366F1'
+  ];
+
+  const seriesList = [];
+  const legendNames = [];
+  let globalCategories = [];
+
+  if (isComparing) {
+    // MODE COMPARAISON : Une série par Année et par Champ
+    filters.years.forEach((year, yearIdx) => {
+      const yearData = data.filter(r => r.date && String(r.date.getFullYear()) === year);
+      // On filtre aussi selon mois/jour si sélectionnés
+      const tempFilters = { ...filters, years: [year] };
+      const filteredYearData = filterData(yearData, tempFilters);
+      const grouped = groupDataDouble(filteredYearData, filters.granularity, sectionType, true);
+      
+      if (grouped.categories.length > globalCategories.length) globalCategories = grouped.categories;
+
+      fields.forEach((field, fieldIdx) => {
+        const seriesName = `${year} - ${field.name === "colisAnnonces" ? "Annoncé" : (field.name === "colisFlashe" ? "Flashé" : field.name)}`;
+        // Attribution d'une couleur distincte de la palette de comparaison
+        const colorIdx = (yearIdx * fields.length + fieldIdx) % comparisonPalette.length;
+        const seriesColor = comparisonPalette[colorIdx];
+        
+        legendNames.push(seriesName);
+        seriesList.push(createSeriesConfig(seriesName, grouped[field.name], seriesColor, chartType));
+      });
+    });
+  } else {
+    // MODE NORMAL : Chronologique
+    const filtered = filterData(data, filters);
+    const grouped = groupDataDouble(filtered, filters.granularity, sectionType, false);
+    globalCategories = grouped.categories;
+
+    fields.forEach(field => {
+      const displayName = field.name === "colisAnnonces" ? "Colis annoncé" : (field.name === "colisFlashe" ? "Colis Flashé" : field.name);
+      legendNames.push(displayName);
+      seriesList.push(createSeriesConfig(displayName, grouped[field.name], field.color, chartType));
+    });
+  }
+
+  if (seriesList.length === 0 || globalCategories.length === 0) {
     renderEmptyChart(sectionType);
     return;
   }
 
-  const cfg = SECTION_CONFIG[sectionType];
-  
-  const customSec = customSections.find(s => s.name === sectionType);
-  const chartType = customSec ? customSec.chartType : "line";
-
-  // Fallback pour les sections par défaut si customSec n'est pas trouvé
-  const fields = customSec ? customSec.fields : (sectionType === "Concentration" ? [{name:"colisFlashe", color:"#D97706"}] : [{name:"colisAnnonces", color:"#2563EB"}, {name:"colisFlashe", color:"#93C5FD"}]);
-
-  const seriesList = [];
-  const legendNames = [];
-  
-  fields.forEach((field, idx) => {
-    const fieldData = grouped[field.name] || [];
-    const fieldColor = field.color || "#2563EB";
-    const displayName = field.name === "colisAnnonces" ? "Colis annoncé" : (field.name === "colisFlashe" ? "Colis Flashé" : field.name);
-    
-    legendNames.push(displayName);
-    
-    seriesList.push({
-      name: displayName,
-      type: chartType,
-      smooth: chartType === "line",
-      showSymbol: chartType === "line",
+  // Helper pour configurer une série
+  function createSeriesConfig(name, data, color, type) {
+    const fieldColor = color || "#2563EB";
+    return {
+      name: name,
+      type: type,
+      smooth: type === "line",
+      showSymbol: type === "line",
       symbol: 'circle',
       symbolSize: 8,
-      data: fieldData,
-      itemStyle: chartType === "bar" ? { 
+      data: data,
+      itemStyle: type === "bar" ? { 
         color: fieldColor,
         borderRadius: [6, 6, 0, 0] // Arrondis sur les barres
       } : { color: fieldColor, borderColor: '#fff', borderWidth: 2 },
-      lineStyle: chartType === "line" ? { 
+      lineStyle: type === "line" ? { 
         width: 4, 
         color: fieldColor,
         shadowBlur: 12,
         shadowColor: 'rgba(0,0,0,0.2)',
         shadowOffsetY: 6
       } : undefined,
-      areaStyle: chartType === "line" ? {
+      areaStyle: type === "line" ? {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: fieldColor + '44' },
+          { offset: 0, color: fieldColor + '33' },
           { offset: 1, color: fieldColor + '00' }
         ])
       } : undefined,
-      barMaxWidth: chartType === "bar" ? 40 : undefined,
+      barMaxWidth: type === "bar" ? 40 : undefined,
       emphasis: { focus: 'series' }
-    });
-  });
+    };
+  }
 
   const option = {
     animationDuration: 800,
@@ -585,9 +689,9 @@ function updateChart(sectionType, data) {
     },
     xAxis: {
       type: "category",
-      data: grouped.categories,
+      data: globalCategories,
       axisLine: { lineStyle: { color: "#cbd5e1" } },
-      axisLabel: { color: "#64748b", fontFamily: "Inter", rotate: grouped.categories.length > 15 ? 45 : 0 }
+      axisLabel: { color: "#64748b", fontFamily: "Inter", rotate: globalCategories.length > 15 ? 45 : 0 }
     },
     yAxis: {
       type: "value",
@@ -696,8 +800,8 @@ function updateTable(sectionType, data) {
     
     cellsHtml += `
       <td>
-        <button class="btn-icon btn-edit" data-index="${realIndex}" title="Modifier"><i class="fa-solid fa-pen-to-square"></i></button>
-        <button class="btn-icon btn-delete" data-index="${realIndex}" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="btn-icon btn-edit" data-index="${realIndex}" title="Modifier">✏️</button>
+        <button class="btn-icon btn-delete" data-index="${realIndex}" title="Supprimer">🗑️</button>
       </td>
     `;
     
@@ -863,7 +967,7 @@ function openModal(sectionType, editIdx) {
       flasheInput.value = row.colisFlashe;
       if (dynamicFieldsContainer) dynamicFieldsContainer.innerHTML = "";
     }
-    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Modifier';
+    saveBtn.textContent = "💾 Modifier";
   } else {
     title.textContent = "Ajouter une entrée";
     typeSelect.value = sectionType;
@@ -889,7 +993,7 @@ function openModal(sectionType, editIdx) {
       flasheInput.value = 0;
       if (dynamicFieldsContainer) dynamicFieldsContainer.innerHTML = "";
     }
-    saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Valider';
+    saveBtn.textContent = "💾 Valider";
   }
 
 // Check if the selected type is a custom section
@@ -1284,11 +1388,11 @@ const nameInput = document.getElementById("modal-section-name");
       (section.fields || []).forEach(f => {
         addDynamicField(f.name, f.color);
       });
-      saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Modifier';
+      saveBtn.textContent = "💾 Modifier";
     }
   } else {
-    title.innerHTML = '<i class="fa-solid fa-plus"></i> Créer une nouvelle section';
-    saveBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Créer';
+    title.textContent = "Créer une nouvelle section";
+    saveBtn.textContent = "➕ Créer";
   }
 
   overlay.style.display = "flex";
@@ -1311,7 +1415,7 @@ function addDynamicField(name = "", color = "#2563EB") {
   div.innerHTML = `
     <input type="text" class="field-name-input" placeholder="Nom du champ" value="${name}" style="flex:1">
     <input type="color" class="field-color-input" value="${color}" style="width:50px">
-    <button type="button" class="btn-icon btn-delete remove-field-btn" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+    <button type="button" class="btn-icon btn-delete remove-field-btn" title="Supprimer">🗑️</button>
   `;
 
   div.querySelector(".remove-field-btn").addEventListener("click", () => {
@@ -1403,20 +1507,26 @@ function createSectionElement(section) {
     <div class="section-header">
       <h2>${section.name}</h2>
       <div class="section-actions">
-        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> Ajouter</button>
+        <button class="btn btn-secondary btn-edit-section" title="Modifier la section">✏️ Modifier</button>
+        <button class="btn btn-secondary btn-move-up" title="Monter">↑</button>
+        <button class="btn btn-secondary btn-move-down" title="Descendre">↓</button>
+        <button class="btn btn-secondary btn-delete-section" title="Supprimer la section">🗑️</button>
         <label class="btn btn-primary file-label">
-          <span><i class="fa-solid fa-file-excel"></i> Importer Excel</span>
+          <span>📁 Importer Excel</span>
           <input type="file" accept=".xlsx" class="file-input" data-section="${section.name}">
         </label>
-        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}"><i class="fa-solid fa-file-excel"></i> Exporter Excel</button>
-        <button class="btn btn-secondary btn-export" data-section="${section.name}"><i class="fa-solid fa-image"></i> Exporter PNG</button>
-        <button class="btn btn-secondary btn-edit-section" title="Paramètres de la section"><i class="fa-solid fa-pen-to-square"></i> Modifier</button>
-        <button class="btn btn-secondary btn-move-up" title="Monter"><i class="fa-solid fa-arrow-up"></i></button>
-        <button class="btn btn-secondary btn-move-down" title="Descendre"><i class="fa-solid fa-arrow-down"></i></button>
-        <button class="btn btn-secondary btn-delete-section" title="Supprimer la section"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="btn btn-secondary btn-export" data-section="${section.name}">📷 Exporter PNG</button>
+        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}">📊 Exporter Excel</button>
+        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}">➕ Ajouter manuellement</button>
       </div>
     </div>
     <div class="filters-bar">
+      <div class="filter-group filter-group-full">
+        <label>Années à comparer (Sélection multiple)</label>
+        <div id="filter-year-${slug}" class="year-checkbox-container" data-section="${section.name}">
+          <!-- Checkboxes générées dynamiquement -->
+        </div>
+      </div>
       <div class="filter-group">
         <label for="filter-day-${slug}">Jour</label>
         <select id="filter-day-${slug}" class="filter-day" data-section="${section.name}"><option value="">Tous</option></select>
@@ -1424,10 +1534,6 @@ function createSectionElement(section) {
       <div class="filter-group">
         <label for="filter-month-${slug}">Mois</label>
         <select id="filter-month-${slug}" class="filter-month" data-section="${section.name}"><option value="">Tous</option></select>
-      </div>
-      <div class="filter-group">
-        <label for="filter-year-${slug}">Année</label>
-        <select id="filter-year-${slug}" class="filter-year" data-section="${section.name}"><option value="">Toutes</option></select>
       </div>
       <div class="filter-group">
         <label for="filter-granularity-${slug}">Regroupement</label>
@@ -1652,6 +1758,9 @@ function initApp() {
   if (loadFromLocalStorage()) {
     SECTION_TYPES.forEach(type => {
       populateFilters(type);
+    });
+    loadFiltersState(); // Restaurer les valeurs des filtres
+    SECTION_TYPES.forEach(type => {
       renderSection(type);
     });
   } else {

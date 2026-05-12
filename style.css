@@ -84,11 +84,6 @@ body {
   margin-top: 2px;
 }
 
-.btn-info-top {
-  margin-left: auto;
-  margin-right: 15px;
-}
-
 .burger-btn {
   display: none;
   flex-direction: column;
@@ -124,12 +119,9 @@ body {
 
 .header-menu {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 16px;
-  flex: 1 1 100%;
-  width: 100%;
-  margin-top: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .mobile-section-title {
@@ -162,21 +154,11 @@ body {
   border-color: var(--primary-light);
 }
 
-.nav-container, .controls-container {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  width: 100%;
-}
-
 .header-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  justify-content: center;
-  width: 100%;
+  gap: 12px;
 }
 
 .status-badge {
@@ -335,6 +317,15 @@ body {
   flex: 1;
 }
 
+.filter-group-full { /* Pour le filtre "Années à comparer" */
+  margin-left: -16px; /* Compense le padding-left de filters-bar */
+  margin-right: -16px; /* Compense le padding-right de filters-bar */
+  width: calc(100% + 32px); /* S'étend sur toute la largeur du fond de filters-bar */
+  flex: 0 0 auto !important; /* Permet à la propriété width de prendre effet */
+  margin-bottom: 8px;
+  /* Pas de padding interne ici, le year-checkbox-container le gère */
+}
+
 .filter-group label {
   font-size: 0.75rem;
   font-weight: 600;
@@ -353,6 +344,41 @@ body {
   color: var(--text);
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Style pour les cases à cocher des années */
+.year-checkbox-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--surface);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.checkbox-item:hover {
+  border-color: var(--primary);
+}
+
+.checkbox-item input:checked + span {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .filter-group select:focus {
@@ -508,7 +534,7 @@ body {
   .header-menu {
     display: none;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     width: 100%;
     margin-top: 16px;
     gap: 16px;
@@ -519,7 +545,6 @@ body {
   .header-menu.active {
     display: flex;
   }
-
 
   .mobile-section-title {
     display: block;
@@ -570,41 +595,22 @@ body {
   .section-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-  }
-
-  .section-actions {
-    justify-content: flex-start;
-    width: auto;
-    flex: 1;
-    gap: 6px;
-  }
-
-  .section-actions {
-    justify-content: flex-start;
-    width: auto; /* Permet aux boutons de ne pas prendre toute la largeur */
-    flex: initial; /* Annule le flex: 1 qui pouvait étirer le conteneur */
-    gap: 8px; /* Ajuste le gap */
-  }
-
-  .section-actions .btn,
-  .section-actions .file-label {
-    flex: 0 1 auto; /* Les boutons prennent leur largeur naturelle et s'enroulent */
-    padding: 8px 12px; /* Réduit le padding */
-    font-size: 0.75rem; /* Réduit la taille de la police */
-    height: 36px; /* Ajuste la hauteur */
   }
 
   .filters-bar {
-    flex-direction: row; /* Permet aux filtres de s'aligner horizontalement */
-    flex-wrap: wrap; /* Permet aux filtres de passer à la ligne */
-    gap: 10px; /* Réduit l'espacement entre les filtres */
-    padding: 12px; /* Réduit le padding de la barre de filtres */
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .filter-group {
-    flex: 1 1 calc(50% - 5px); /* Deux colonnes de filtres */
-    min-width: 120px; /* Largeur minimale pour chaque filtre */
+    min-width: calc(50% - 5px);
+    flex: 1;
+  }
+
+  .filter-group-full {
+    min-width: 100% !important;
+    flex: 0 0 100% !important;
   }
 
   .chart-container {
@@ -614,57 +620,10 @@ body {
   .data-table th,
   .data-table td {
     padding: 10px 12px;
-    font-size: 0.75rem; /* Réduit la taille de la police dans les tableaux */
-  }
-
-  .filter-group label {
-    font-size: 0.7rem; /* Taille de police plus petite pour les labels de filtre */
-  }
-
-  .filter-group select {
-    font-size: 0.8rem; /* Taille de police plus petite pour les sélecteurs de filtre */
-    padding: 6px 10px; /* Padding réduit pour les sélecteurs */
   }
 }
 
 @media (max-width: 480px) {
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .section-header h2 {
-    font-size: 1.1rem;
-    width: 100%;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 4px;
-  }
-
-  .section-actions .btn,
-  .section-actions .file-label {
-    padding: 6px 10px; /* Padding encore plus réduit */
-    font-size: 0.7rem; /* Police encore plus petite */
-    height: 32px; /* Hauteur ajustée */
-  }
-
-  .section-actions {
-    display: flex;
-    flex-wrap: wrap;
-        justify-content:space-around;
-    gap: 6px;
-  }
-  
-  .filters-bar {
-    gap: 8px; /* Espacement encore plus réduit */
-    padding: 8px; /* Padding encore plus réduit */
-  }
-
-  .filter-group {
-    flex: 1 1 calc(50% - 4px); /* Deux colonnes de filtres */
-    min-width: 100px; /* Largeur minimale ajustée */
-  }
-
   .header-content h1 {
     font-size: 1.25rem;
   }
@@ -672,14 +631,10 @@ body {
   .chart-container {
     height: 260px;
   }
-  
-  .filter-group label {
-    font-size: 0.65rem; /* Police encore plus petite pour les labels */
-  }
 
-  .filter-group select {
-    font-size: 0.75rem; /* Police encore plus petite pour les sélecteurs */
-    padding: 5px 8px; /* Padding encore plus réduit */
+  .btn {
+    padding: 8px 14px;
+    font-size: 0.8rem;
   }
 }
 
@@ -707,7 +662,6 @@ body {
   max-width: 480px;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
   overflow: hidden;
   animation: slideUp 0.25s ease;
 }
@@ -748,41 +702,10 @@ body {
   color: var(--danger);
 }
 
-.help-section {
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-}
-
-.help-section h4 {
-  color: var(--primary);
-  margin-bottom: 8px;
-  font-size: 1rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
-}
-
-.help-section ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.help-section li {
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-
-.help-section li i {
-  width: 20px;
-  color: var(--secondary);
-  margin-right: 5px;
-  text-align: center;
-}
-
 .modal-body {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   gap: 14px;
 }
 
@@ -810,6 +733,65 @@ body {
   background: var(--surface);
   color: var(--text);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Optimisation des checkboxes pour mobile */
+.year-checkbox-container {
+  display: flex;
+  flex-wrap: nowrap; /* Force une seule ligne */
+  overflow-x: auto;  /* Défilement horizontal */
+  -webkit-overflow-scrolling: touch; /* Défilement fluide sur iOS */
+  gap: 8px;
+  padding: 8px 4px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  scrollbar-width: none; /* Cache la scrollbar sur Firefox */
+}
+
+.year-checkbox-container::-webkit-scrollbar {
+  display: none; /* Cache la scrollbar sur Chrome/Safari */
+}
+
+.checkbox-item {
+  flex-shrink: 0; /* Empêche l'écrasement des boutons */
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.checkbox-item input {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.checkbox-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.checkbox-item:has(input:checked) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.checkbox-item input:checked + span {
+  color: white;
+  font-weight: 600;
 }
 
 .modal-body .form-group input:focus,
