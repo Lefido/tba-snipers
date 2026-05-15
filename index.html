@@ -12,6 +12,10 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Font Awesome (icônes UI) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -37,13 +41,14 @@
       <div class="mobile-section-title">Actions & Paramètres</div>
       <div class="header-controls">
         <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
-        <button id="btn-info" class="btn btn-secondary" title="Aide et informations">ℹ️ Aide</button>
-        <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard">💾 Exporter Sauvegarde</button>
+        
+        <button id="btn-export-backup" class="btn btn-secondary" title="Sauvegarder tout le dashboard"><i class="fa-solid fa-floppy-disk"></i> Exporter Sauvegarde</button>
         <label class="btn btn-secondary" title="Restaurer une sauvegarde">
-          📥 Importer Sauvegarde
+          <i class="fa-solid fa-file-import"></i> Importer Sauvegarde
           <input type="file" id="btn-import-backup" accept=".json" style="display:none">
         </label>
         <button id="btn-reset-all" class="btn btn-danger">Réinitialiser toutes les données</button>
+        <button id="btn-info" class="btn btn-secondary" title="Aide et informations"><i class="fa-solid fa-circle-info"></i> Aide</button>
       </div>
     </div>
   </header>
@@ -129,6 +134,89 @@
     </div>
   </template>
 
+  <!-- Modal d'aide (nécessaire pour le bouton ℹ️ Aide) -->
+  <div id="modal-help-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Aide & Informations</h3>
+        <button class="modal-close" id="modal-help-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Utilisation</label>
+          <div style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.45; max-height: 62vh; overflow: auto; padding-right: 6px;">
+            <strong>Objectif :</strong> charger des données depuis Excel, puis analyser des tendances via des graphiques (ECharts) et des tableaux interactifs.
+            <br><br>
+            <strong>Vue d’ensemble de l’interface</strong>
+            <br>• <strong>Header</strong> : actions globales (Ajouter section, Export sauvegarde, Import sauvegarde JSON, Reset total).
+            <br>• <strong>Sections</strong> : chaque section possède son graphique + ses filtres + ses données brutes (tableau).
+            <br>• <strong>Modales</strong> : saisie/édition des lignes, création/édition des sections, et aide.
+            <br><br>
+            <strong>1) Importer les données (Excel .xlsx)</strong>
+            <br>• Par <em>section</em> : utilisez <strong>« 📁 Importer Excel »</strong> dans la section concernée.
+            <br>• Intérêt : vous pouvez importer plusieurs fichiers successivement, et le dashboard s’actualise.
+            <br><br>
+            <strong>Format attendu (colonnes)</strong>
+            <br>• <strong>Colonnes obligatoires</strong> :
+            <br>  - <strong>Type</strong> : doit correspondre à une section existante (ex: “Dispersion 14h”, ou nom d’une section personnalisée).
+            <br>  - <strong>Date</strong> : Excel doit fournir une date interprétable (le script gère les dates Excel converties).
+            <br>• <strong>Sections standard</strong> : le script cherche aussi des colonnes qui contiennent “annonce” et “flash”.
+            <br>• <strong>Sections personnalisées</strong> : les colonnes attendues sont basées sur les <strong>champs configurés</strong> (noms exactement comme définis dans la section).
+            <br><br>
+            <strong>Anti-doublons (important)</strong>
+            <br>• Si vous importez plusieurs fois le même couple <strong>(Type + Date)</strong>, la ligne est dédupliquée.
+            <br><br>
+            <strong>2) Graphiques (ECharts) — comment les lire</strong>
+            <br>• Le graphique utilise un <strong>axe X</strong> construit à partir du regroupement (Jour/Semaine/Mois/Année).
+            <br>• Le <strong>mode normal</strong> affiche des séries pour les champs de la section.
+            <br>• Le <strong>mode comparaison</strong> s’active dès que vous cochez <strong>plus d’une année</strong> :
+            <br>  - une série par <strong>année</strong> et par <strong>champ</strong>
+            <br>  - couleurs distinctes pour différencier rapidement les tendances.
+            <br><br>
+            <strong>3) Filtres — ce qui change quand vous cliquez</strong>
+            <br>• <strong>Jour</strong> : affiche uniquement les lignes correspondant au jour sélectionné.
+            <br>• <strong>Mois</strong> : filtre sur le mois sélectionné.
+            <br>• <strong>Années</strong> :
+            <br>  - cochez 1 année → mode normal
+            <br>  - cochez plusieurs années → mode comparaison
+            <br>• <strong>Regroupement</strong> : change la “granularité” de l’axe X (et donc la forme de la tendance).
+            <br>• Tous les filtres s’appliquent à la fois au graphique <strong>et</strong> au tableau.
+            <br><br>
+            <strong>4) Données brutes (tableau) — édition & suppression</strong>
+            <br>• Ouvrez <strong>« Données brutes — [nom de section] »</strong> pour voir les lignes.
+            <br>• Tri : l’en-tête Date permet de basculer <strong>asc / desc</strong>.
+            <br>• <strong>✏️ Modifier</strong> : ouvre la modale de saisie avec les valeurs actuelles.
+            <br>  - Pour une section standard : colonnes annoncées/flashées selon visibilité.
+            <br>  - Pour une section personnalisée : champs dynamiques générés à partir de la configuration.
+            <br>• <strong>🗑️ Supprimer</strong> : supprime la ligne puis force la mise à jour du graphique et du tableau.
+            <br><br>
+            <strong>5) Export — conserver ou partager vos analyses</strong>
+            <br>• <strong>📷 Exporter PNG</strong> : export direct du graphique en image (utile pour report / mail).
+            <br>• <strong>📊 Exporter Excel</strong> : export des données de la section.
+            <br><br>
+            <strong>6) Réinitialisation (Reset total)</strong>
+            <br>• <strong>« Réinitialiser toutes les données »</strong> : efface les données stockées dans le navigateur via localStorage.
+            <br>• Résultat : graphiques vidés + filtres recalibrés + sections personnalisées supprimées.
+            <br><br>
+            <strong>7) Subtilités & comportements “cachés”</strong>
+            <br>• <strong>Persistant</strong> : les données importées restent après rechargement de page (localStorage).
+            <br>• <strong>Déduplication</strong> : clé métier = <strong>(Type + Date)</strong>.
+            <br>• <strong>Sections personnalisées</strong> : champs dynamiques → import et édition utilisent exactement ces champs.
+            <br>• <strong>Clôture de la modale d’aide</strong> :
+            <br>  - cliquez sur <strong>« × »</strong> ou <strong>« Fermer »</strong>
+            <br>  - ou cliquez sur le fond (overlay) pour la fermer.
+          </div>
+        </div>
+      </div>
+
+
+      <div class="modal-footer">
+<button class="btn btn-primary" id="modal-help-ok"><i class="fa-solid fa-xmark"></i> Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
+

@@ -189,16 +189,40 @@ function loadFromLocalStorage() {
 }
 
 function updateStatus(hasData) {
+  // 1) On essaye d'abord le badge global (si existant)
   const el = document.getElementById("status-indicator");
-  if (!el) return;
-  if (hasData && appData.length > 0) {
-    el.textContent = `Données chargées (${appData.length} lignes)`;
-    el.classList.add("active");
-  } else {
-    el.textContent = "Aucune donnée chargée";
-    el.classList.remove("active");
+  if (el) {
+    if (hasData && appData.length > 0) {
+      el.textContent = `Données chargées (${appData.length} lignes)`;
+      el.classList.add("active");
+    } else {
+      el.textContent = "Aucune donnée chargée";
+      el.classList.remove("active");
+    }
+    return;
   }
+
+  // 2) Sinon, on met à jour le badge contenu dans chaque section
+  //    (id: badge-${sectionId} où sectionId = sectionTypeToSlug(sectionType))
+  const total = appData.length;
+  const normalizedHasData = hasData && total > 0;
+
+  SECTION_TYPES.forEach(type => {
+    const badge = document.getElementById(`badge-${sectionTypeToSlug(type)}`);
+    if (!badge) return;
+
+    if (normalizedHasData) {
+      const sectionCount = appData.filter(r => r.type === type).length;
+      badge.textContent = `${sectionCount} ligne${sectionCount > 1 ? 's' : ''}`;
+      if (sectionCount > 0) badge.classList.add("active");
+      else badge.classList.remove("active");
+    } else {
+      badge.textContent = `0 ligne`;
+      badge.classList.remove("active");
+    }
+  });
 }
+
 
 /* ============================================================
    PARSING EXCEL
@@ -341,13 +365,7 @@ function loadFiltersState() {
       if (document.getElementById(`filter-month-${slug}`)) document.getElementById(`filter-month-${slug}`).value = filters.month;
       if (document.getElementById(`filter-granularity-${slug}`)) document.getElementById(`filter-granularity-${slug}`).value = filters.granularity;
       
-      // Pour les années (checkboxes)
-      const container = document.getElementById(`filter-year-${slug}`);
-      if (container && filters.years) {
-        container.querySelectorAll('input').forEach(cb => {
-          cb.checked = filters.years.includes(cb.value);
-        });
-      }
+
     });
   } catch (e) { console.error("Erreur restauration filtres:", e); }
 }
@@ -489,7 +507,10 @@ function populateFilters(sectionType) {
       label.className = "checkbox-item";
       const isChecked = savedYears.includes(v) ? 'checked' : '';
       label.innerHTML = `<input type="checkbox" value="${v}" ${isChecked}> <span>${v}</span>`;
-      label.querySelector('input').addEventListener('change', () => renderSection(sectionType));
+      label.querySelector('input').addEventListener('change', () => {
+        saveFiltersState();
+        renderSection(sectionType);
+      });
       sel.appendChild(label);
     });
   };
@@ -1215,8 +1236,24 @@ function attachEventListeners() {
   // Bouton Info
   const btnInfo = document.getElementById("btn-info");
   if (btnInfo) btnInfo.addEventListener("click", () => {
-    document.getElementById("modal-help-overlay").style.display = "flex";
+    const el = document.getElementById("modal-help-overlay");
+    if (el) el.style.display = "flex";
   });
+
+  // Boutons fermeture modal d'aide
+  const modalHelpClose = document.getElementById("modal-help-close");
+  if (modalHelpClose) modalHelpClose.addEventListener("click", closeHelpModal);
+
+  const modalHelpOk = document.getElementById("modal-help-ok");
+  if (modalHelpOk) modalHelpOk.addEventListener("click", closeHelpModal);
+
+  const modalHelpOverlay = document.getElementById("modal-help-overlay");
+  if (modalHelpOverlay) {
+    modalHelpOverlay.addEventListener("click", e => {
+      if (e.target === modalHelpOverlay) closeHelpModal();
+    });
+  }
+
 
   // Sauvegarde & Import (Backup)
   const exportBackupBtn = document.getElementById("btn-export-backup");
@@ -1239,6 +1276,7 @@ document.getElementById("modal-overlay").addEventListener("click", e => {
   });
 
   // === Gestion des sections dynamiques ===
+
 
   // Bouton "Ajouter une section"
   const btnAddSection = document.getElementById("btn-add-section");
@@ -1507,17 +1545,21 @@ function createSectionElement(section) {
     <div class="section-header">
       <h2>${section.name}</h2>
       <div class="section-actions">
-        <button class="btn btn-secondary btn-edit-section" title="Modifier la section">✏️ Modifier</button>
-        <button class="btn btn-secondary btn-move-up" title="Monter">↑</button>
-        <button class="btn btn-secondary btn-move-down" title="Descendre">↓</button>
-        <button class="btn btn-secondary btn-delete-section" title="Supprimer la section">🗑️</button>
+       
+        <button class="btn btn-secondary btn-move-up" title="Monter"><i class="fa-solid fa-arrow-up"></i></button>
+        <button class="btn btn-secondary btn-move-down" title="Descendre"><i class="fa-solid fa-arrow-down"></i></button>
+        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> Ajouter manuellement</button>
+        
         <label class="btn btn-primary file-label">
-          <span>📁 Importer Excel</span>
+          <span><i class="fa-solid fa-file-import"></i> Importer Excel</span>
           <input type="file" accept=".xlsx" class="file-input" data-section="${section.name}">
         </label>
-        <button class="btn btn-secondary btn-export" data-section="${section.name}">📷 Exporter PNG</button>
-        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}">📊 Exporter Excel</button>
-        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}">➕ Ajouter manuellement</button>
+        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}"><i class="fa-solid fa-file-excel"></i> Exporter Excel</button>
+        <button class="btn btn-secondary btn-export" data-section="${section.name}"><i class="fa-solid fa-camera"></i> Exporter PNG</button>
+        
+        
+         <button class="btn btn-secondary btn-edit-section" title="Modifier la section"><i class="fa-solid fa-pen-to-square"></i> Modifier section</button>
+        <button class="btn btn-secondary btn-delete-section" title="Supprimer la section"><i class="fa-solid fa-trash"></i></button>
       </div>
     </div>
     <div class="filters-bar">
@@ -1527,14 +1569,17 @@ function createSectionElement(section) {
           <!-- Checkboxes générées dynamiquement -->
         </div>
       </div>
+
       <div class="filter-group">
         <label for="filter-day-${slug}">Jour</label>
         <select id="filter-day-${slug}" class="filter-day" data-section="${section.name}"><option value="">Tous</option></select>
       </div>
+
       <div class="filter-group">
         <label for="filter-month-${slug}">Mois</label>
         <select id="filter-month-${slug}" class="filter-month" data-section="${section.name}"><option value="">Tous</option></select>
       </div>
+
       <div class="filter-group">
         <label for="filter-granularity-${slug}">Regroupement</label>
         <select id="filter-granularity-${slug}" class="filter-granularity" data-section="${section.name}">
@@ -1668,7 +1713,10 @@ function attachSectionEvents(sectionEl, sectionName, internalId) {
 
   // Filtres
   sectionEl.querySelectorAll(".filters-bar select").forEach(sel => {
-    sel.addEventListener("change", () => renderSection(sectionName));
+    sel.addEventListener("change", () => {
+      saveFiltersState();
+      renderSection(sectionName);
+    });
   });
 }
 
@@ -1734,8 +1782,10 @@ function moveSection(sectionId, direction) {
 
 /** Fermer la modal d'aide */
 function closeHelpModal() {
-  document.getElementById("modal-help-overlay").style.display = "none";
+  const el = document.getElementById("modal-help-overlay");
+  if (el) el.style.display = "none";
 }
+
 
 /* ============================================================
    POINT D'ENTRÉE

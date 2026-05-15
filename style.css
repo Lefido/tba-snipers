@@ -65,6 +65,8 @@ body {
   gap: 12px;
 }
 
+
+
 .header-logo {
   height: 56px;
   width: auto;
@@ -123,6 +125,9 @@ body {
   flex-wrap: wrap;
   gap: 12px;
 }
+
+
+
 
 .mobile-section-title {
   display: none;
@@ -290,10 +295,11 @@ body {
 .section-actions {
   display: flex;
   align-items: center;
-  justify-content:space-around;
+  justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
 }
+
 
 /* ============================================
    FILTRES
@@ -314,17 +320,19 @@ body {
   flex-direction: column;
   gap: 4px;
   min-width: 140px;
-  flex: 1;
+  flex: 1 1 0;
 }
 
+
 .filter-group-full { /* Pour le filtre "Années à comparer" */
-  margin-left: -16px; /* Compense le padding-left de filters-bar */
-  margin-right: -16px; /* Compense le padding-right de filters-bar */
-  width: calc(100% + 32px); /* S'étend sur toute la largeur du fond de filters-bar */
-  flex: 0 0 auto !important; /* Permet à la propriété width de prendre effet */
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  margin-left: 0;
+  margin-right: 0;
   margin-bottom: 8px;
   /* Pas de padding interne ici, le year-checkbox-container le gère */
 }
+
 
 .filter-group label {
   font-size: 0.75rem;
@@ -355,9 +363,12 @@ body {
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  max-height: 100px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
+  width: 100%;
 }
+
+
 
 .checkbox-item {
   display: flex;
@@ -770,12 +781,17 @@ body {
 }
 
 .checkbox-item input {
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
-  cursor: pointer;
-  accent-color: var(--primary);
+  /* On masque visuellement le checkbox, mais on le garde dans le DOM
+     pour que `input:checked` continue de piloter le filtre (JS). */
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
 }
+
 
 .checkbox-item:hover {
   border-color: var(--primary);
