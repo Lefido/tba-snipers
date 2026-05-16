@@ -133,6 +133,12 @@ body {
   display: none;
 }
 
+/* Desktop: header-controls before header-nav */
+@media (min-width: 769px) {
+  .header-controls { order: 0; }
+  .header-nav { order: 1; }
+}
+
 .header-nav {
   width: 100%;
   display: flex;
@@ -141,6 +147,7 @@ body {
   align-items: center;
   gap: 8px;
 }
+
 
 .header-nav a {
   font-size: 0.8rem;
@@ -544,6 +551,11 @@ body {
   .burger-btn {
     display: flex;
   }
+
+  /* Mobile: keep identical layout (nav before controls) */
+  .header-nav { order: 0; }
+  .header-controls { order: 1; }
+
 
   .header-menu {
     display: none;
