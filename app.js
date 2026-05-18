@@ -1545,12 +1545,13 @@ function createSectionElement(section) {
     <div class="section-header">
       <h2>${section.name}</h2>
       <div class="section-actions">
-       
+       <div class="group-move">
         <button class="btn btn-secondary btn-move-up" title="Monter"><i class="fa-solid fa-arrow-up"></i></button>
         <button class="btn btn-secondary btn-move-down" title="Descendre"><i class="fa-solid fa-arrow-down"></i></button>
-        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> Ajouter manuellement</button>
+        </div>
+        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> Ajout manuel</button>
         
-        <label class="btn btn-primary file-label">
+        <label class="btn btn-secondary file-label">
           <span><i class="fa-solid fa-file-import"></i> Importer Excel</span>
           <input type="file" accept=".xlsx" class="file-input" data-section="${section.name}">
         </label>
