@@ -1369,3 +1369,20 @@ body {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.main-footer {
+  margin: 12px auto 0;
+  padding: 16px 24px;
+  max-width: 1280px;
+  width: 100%;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+}
+
