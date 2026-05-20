@@ -1467,9 +1467,14 @@ function addDynamicField(name = "", color = "#2563EB") {
   div.style.marginBottom = "10px";
   div.innerHTML = `
     <input type="text" class="field-name-input" placeholder="Nom du champ" value="${name}" style="flex:1">
-    <input type="color" class="field-color-input" value="${color}" style="width:50px">
+    <input type="color" class="field-color-input" value="${color}" style="width:50px; background-color: ${color};">
     <button type="button" class="btn-icon btn-delete remove-field-btn" title="Supprimer">🗑️</button>
   `;
+
+  const colorInput = div.querySelector(".field-color-input");
+  colorInput.addEventListener("input", (e) => {
+    e.target.style.backgroundColor = e.target.value;
+  });
 
   div.querySelector(".remove-field-btn").addEventListener("click", () => {
     div.remove();

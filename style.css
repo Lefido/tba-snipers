@@ -1333,6 +1333,23 @@ body {
   min-width: 80px;
 }
 
+.field-color-input {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  height: 38px;
+  transition: background-color 0.2s ease;
+}
+
+.field-color-input::-webkit-color-swatch-wrapper {
+  padding: 4px; /* Permet de voir la couleur de fond de l'input autour de la pastille */
+}
+
+.field-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
 .btn-remove-field {
   background: none;
   border: none;
