@@ -1225,9 +1225,20 @@ function attachEventListeners() {
 
   // Bouton d'impression
   const printBtn = document.getElementById("btn-print-report");
-  if (printBtn) printBtn.addEventListener("click", () => window.print());
+  if (printBtn) {
+    printBtn.addEventListener("click", () => {
+      const checkboxes = document.querySelectorAll(".section-print-checkbox");
+      const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+      if (!anyChecked) {
+        alert("Aucune section n'est sélectionnée. Veuillez cocher au moins une case dans les sections avant d'imprimer le rapport.");
+      } else {
+        window.print();
+      }
+    });
+  }
 
   // Menu Burger
+  updatePrintButtonState(); // Initial state for the print button
   const burgerBtn = document.getElementById("burger-btn");
   const headerMenu = document.getElementById("header-menu");
   if (burgerBtn && headerMenu) {
@@ -1696,6 +1707,12 @@ function attachSectionEvents(sectionEl, sectionName, internalId) {
     addManualBtn.addEventListener("click", () => openModal(sectionName, null));
   }
 
+  // Print checkbox listener
+  const printCheckbox = sectionEl.querySelector('.section-print-checkbox');
+  if (printCheckbox) {
+    printCheckbox.addEventListener('change', updatePrintButtonState);
+  }
+
   // Edit Section
   const editSectionBtn = sectionEl.querySelector(".btn-edit-section");
   if (editSectionBtn && internalId) {
@@ -1796,6 +1813,32 @@ function moveSection(sectionId, direction) {
 function closeHelpModal() {
   const el = document.getElementById("modal-help-overlay");
   if (el) el.style.display = "none";
+}
+
+/**
+ * Met à jour l'état du bouton "Imprimer rapport" en fonction des checkboxes de sélection de section.
+ * Le bouton est activé si au moins une checkbox est cochée.
+ */
+function updatePrintButtonState() {
+  const printButton = document.getElementById("btn-print-report");
+  if (!printButton) return;
+
+  const checkboxes = document.querySelectorAll(".section-print-checkbox");
+  let anyChecked = false;
+  for (const checkbox of checkboxes) {
+    if (checkbox.checked) {
+      anyChecked = true;
+      break;
+    }
+  }
+  // On ne désactive plus physiquement le bouton pour permettre l'affichage du message d'alerte au clic
+  if (anyChecked) {
+    printButton.style.opacity = "1";
+    printButton.title = "Imprimer le rapport";
+  } else {
+    printButton.style.opacity = "0.6";
+    printButton.title = "Sélectionnez au moins une section pour imprimer";
+  }
 }
 
 /* ============================================
