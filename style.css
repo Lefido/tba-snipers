@@ -1386,3 +1386,121 @@ body {
   backdrop-filter: blur(8px);
 }
 
+/* ============================================
+   GESTION DE L'IMPRESSION (REPORTING)
+   ============================================ */
+
+/* Éléments à masquer ou afficher selon le mode */
+.print-only { display: none !important; }
+
+@media print {
+  /* Masquage global des éléments UI */
+  .no-print, 
+  .main-header, 
+  .main-footer, 
+  .btn, 
+  .filters-bar, 
+  .table-details, 
+  .modal-overlay,
+  .section-actions,
+  .section-reorder-btns,
+  .group-move {
+    display: none !important;
+  }
+
+  .print-only { display: block !important; }
+
+  body {
+    background: white !important;
+    padding: 0;
+    margin: 0;
+  }
+
+  .main-container {
+    padding: 0;
+    gap: 0;
+    max-width: none;
+  }
+
+  /* Style de la table des matières */
+  #print-toc {
+    page-break-after: always;
+    padding: 40px;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .toc-title {
+    font-size: 3rem;
+    color: var(--primary);
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 10px;
+    text-align: center;
+  }
+
+  #print-toc-list {
+    list-style: none;
+    font-size: 1.2rem;
+    max-width: 80%;
+    margin: 0 auto;
+  }
+
+  #print-toc-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #print-toc-list li::after {
+    content: ".............................................................................................................................................................";
+    order: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    margin: 0 10px;
+    color: var(--text-muted);
+    flex: 1;
+    opacity: 0.3;
+  }
+
+  #print-toc-list li span {
+    order: 1;
+    font-weight: 600;
+  }
+
+  /* Style des sections dans le rapport */
+  .dashboard-section {
+    page-break-before: always;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 40px 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .dashboard-section h2 {
+    font-size: 2rem;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .print-filter-summary {
+    background: #f8fafc !important;
+    border-left: 4px solid var(--primary) !important;
+    padding: 15px !important;
+    margin-bottom: 30px !important;
+    font-size: 1.1rem !important;
+    color: var(--text-muted) !important;
+    display: block !important;
+  }
+
+  .chart-container {
+    width: 100% !important;
+    height: 500px !important;
+    border: 1px solid var(--border) !important;
+    margin: 20px 0 !important;
+  }
+}

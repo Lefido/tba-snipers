@@ -1223,6 +1223,10 @@ function attachEventListeners() {
   const resetBtn = document.getElementById("btn-reset-all");
   if (resetBtn) resetBtn.addEventListener("click", clearAllData);
 
+  // Bouton d'impression
+  const printBtn = document.getElementById("btn-print-report");
+  if (printBtn) printBtn.addEventListener("click", () => window.print());
+
   // Menu Burger
   const burgerBtn = document.getElementById("burger-btn");
   const headerMenu = document.getElementById("header-menu");
@@ -1543,7 +1547,12 @@ function createSectionElement(section) {
 
   sectionEl.innerHTML = `
     <div class="section-header">
-      <h2>${section.name}</h2>
+      <!-- Checkbox de sélection pour le rapport -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <input type="checkbox" class="section-print-checkbox no-print" title="Inclure dans le rapport" 
+               style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary);">
+        <h2>${section.name}</h2>
+      </div>
       <div class="section-actions">
        <div class="group-move">
         <button class="btn btn-secondary btn-move-up" title="Monter"><i class="fa-solid fa-arrow-up"></i></button>
@@ -1563,6 +1572,8 @@ function createSectionElement(section) {
         <button class="btn btn-secondary btn-delete-section" title="Supprimer la section"><i class="fa-solid fa-trash"></i></button>
       </div>
     </div>
+    <!-- Résumé des filtres pour l'impression -->
+    <div class="print-filter-summary print-only" style="margin-bottom: 15px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem;"></div>
     <div class="filters-bar">
       <div class="filter-group filter-group-full">
         <label>Années à comparer (Sélection multiple)</label>
@@ -1787,6 +1798,72 @@ function closeHelpModal() {
   if (el) el.style.display = "none";
 }
 
+/* ============================================
+   GESTION DE L'IMPRESSION DU RAPPORT
+   ============================================ */
+
+const MONTH_NAMES_FR = [
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
+];
+
+window.onbeforeprint = () => {
+  const tocList = document.getElementById('print-toc-list');
+  if (!tocList) return;
+  
+  tocList.innerHTML = '';
+  const sections = document.querySelectorAll('.dashboard-section');
+  
+  sections.forEach(section => {
+    const checkbox = section.querySelector('.section-print-checkbox');
+    const isSelected = checkbox ? checkbox.checked : true;
+    
+    if (!isSelected) {
+      // Masquer la section pour l'impression
+      section.classList.add('no-print');
+    } else {
+      section.classList.remove('no-print');
+      
+      // Ajouter à la table des matières
+      const title = section.querySelector('h2').textContent;
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${title}</span>`;
+      tocList.appendChild(li);
+
+      // Générer le résumé des filtres texte pour le rapport
+      const sectionName = section.dataset.type;
+      const f = getFiltersForSection(sectionName);
+      
+      // Traduction des filtres en texte explicite
+      const periodText = f.years.length > 0 ? f.years.join(', ') : 'Toutes les années';
+      const monthText = f.month ? MONTH_NAMES_FR[parseInt(f.month, 10) - 1] : 'Tous les mois';
+      const dayText = f.day ? `Jour : ${f.day}` : 'Tous les jours';
+      
+      const granularityMap = {
+        'day': 'Quotidien',
+        'week': 'Hebdomadaire (Semaine)',
+        'month': 'Mensuel',
+        'year': 'Annuel'
+      };
+
+      const summary = section.querySelector('.print-filter-summary');
+      if (summary) {
+        summary.innerHTML = `<strong>Période d'analyse :</strong> ${periodText} &bull; ${monthText} &bull; ${dayText}<br>` +
+                            `<strong>Niveau de détail :</strong> Regroupement ${granularityMap[f.granularity] || f.granularity}`;
+      }
+      
+      // Redimensionner les graphiques pour la largeur d'impression
+      if (chartInstances[sectionName]) {
+        chartInstances[sectionName].resize();
+      }
+    }
+  });
+};
+
+window.onafterprint = () => {
+  // Restaurer la visibilité de toutes les sections sur l'écran
+  document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('no-print'));
+};
 
 /* ============================================================
    POINT D'ENTRÉE
