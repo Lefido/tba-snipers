@@ -95,9 +95,15 @@ let editingSectionId = null;
 /** Clés localStorage pour le backup */
 const BACKUP_KEYS = [STORAGE_KEY, CUSTOM_SECTIONS_KEY, SECTION_ORDER_KEY];
 
+/** Couleurs prédéfinies pour les champs */
+const COLOR_PRESETS = [
+  "#2563EB", "#059669", "#7C3AED", "#DC2626", "#D97706",
+  "#0891B2", "#BE185D", "#15803D", "#4F46E5", "#EA580C"
+];
+
 /** État global des types et configs */
-let SECTION_TYPES = [];
-let SECTION_CONFIG = {};
+let SECTION_TYPES = [...DEFAULT_SECTION_TYPES];
+let SECTION_CONFIG = { ...DEFAULT_SECTION_CONFIG };
 
 /* ============================================================
    UTILITAIRES DE DATE
@@ -314,6 +320,117 @@ function handleFileImport(event, sectionType) {
       });
 
       alert(`${uniqueNew.length} nouvelle(s) ligne(s) importée(s) avec succès.`);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de l'import : " + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = "";
+}
+
+/**
+ * Importer une section entière (configuration + données) depuis un fichier Excel.
+ * Format strict calqué sur "Exporter Excel" : Colonne A = "Type", Colonne B = "Date", Colonnes C+ = Champs.
+ */
+function handleSectionExcelImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const arrayBuffer = e.target.result;
+      const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+
+      if (json.length < 1) throw new Error("Le fichier Excel doit contenir au moins une ligne d'en-tête.");
+
+      const rawHeaders = json[0].map(h => String(h).trim());
+      
+      // Validation stricte de l'ordre des colonnes de base (Format Export)
+      if (rawHeaders[0] !== "Type" || rawHeaders[1] !== "Date") {
+        throw new Error("Format incorrect. Le fichier Excel doit avoir 'Type' en colonne A et 'Date' en colonne B. La première feuille sera utilisée comme nom de section.");
+      }
+
+      // Identification de la section cible via le nom de la première feuille
+      const sectionName = workbook.SheetNames[0];
+      if (!sectionName) throw new Error("Le nom de la feuille Excel est introuvable, impossible de déterminer le nom de la section.");
+
+      // Création dynamique de la section si elle n'existe pas encore
+      if (!SECTION_TYPES.includes(sectionName)) {
+        const fieldHeaders = rawHeaders.slice(2);
+        if (fieldHeaders.length === 0) throw new Error("Aucune colonne de données détectée après 'Type' et 'Date'.");
+
+        const fields = fieldHeaders.map((h, i) => ({
+          name: h,
+          color: COLOR_PRESETS[i % COLOR_PRESETS.length] || "#2563EB"
+        }));
+
+        const newId = "section-" + Date.now();
+        customSections.push({ id: newId, name: sectionName, chartType: "line", fields: fields });
+        sectionOrder.push(newId);
+        saveCustomSections();
+        SECTION_TYPES.push(sectionName);
+      }
+
+      const isStandard = DEFAULT_SECTION_TYPES.includes(sectionName);
+      const currentSection = customSections.find(s => s.name === sectionName);
+      
+      const newRows = [];
+      for (let i = 1; i < json.length; i++) {
+        const r = json[i];
+        if (!r || r.length < 2) continue;
+
+        // On ne prend que les lignes correspondant à la section identifiée
+        if (String(r[0] || "").trim() !== sectionName && isStandard) continue; // Only filter by 'Type' column for standard sections to avoid incorrect matching with sheet name
+
+        const dateVal = convertExcelDate(r[1]);
+        if (!dateVal) continue;
+
+        if (isStandard) {
+          // Mapping inverse pour les sections par défaut (gestion des libellés d'export)
+          const idxAnn = rawHeaders.indexOf("Colis annoncé");
+          const idxFla = rawHeaders.indexOf("Colis Flashé");
+          
+          newRows.push({
+            type: sectionName,
+            date: dateVal,
+            colisAnnonces: idxAnn !== -1 ? parseNumber(r[idxAnn]) : 0,
+            colisFlashe: idxFla !== -1 ? parseNumber(r[idxFla]) : 0,
+            dynamicFields: {}
+          });
+        } else if (currentSection) {
+          // Mapping pour les sections personnalisées
+          const dynamicFields = {};
+          currentSection.fields.forEach(f => {
+            const fIdx = rawHeaders.indexOf(f.name);
+            dynamicFields[f.name] = fIdx !== -1 ? parseNumber(r[fIdx]) : 0;
+          });
+          newRows.push({ type: sectionName, date: dateVal, dynamicFields });
+        }
+      }
+
+      // Fusion avec déduplication (Type + Date ISO)
+      const existingKeys = new Set(appData.map(r => `${r.type}|${r.date?.toISOString()}`));
+      const uniqueNew = newRows.filter(r => {
+        const key = `${r.type}|${r.date?.toISOString()}`;
+        if (existingKeys.has(key)) return false;
+        existingKeys.add(key);
+        return true;
+      });
+
+      if (uniqueNew.length === 0) {
+        alert(`Aucune nouvelle donnée trouvée pour la section "${sectionName}".`);
+        return;
+      }
+
+      appData = appData.concat(uniqueNew);
+      saveToLocalStorage();
+      
+      alert(`${uniqueNew.length} ligne(s) importée(s) avec succès dans "${sectionName}".`);
+      location.reload(); 
     } catch (err) {
       console.error(err);
       alert("Erreur lors de l'import : " + err.message);
@@ -544,6 +661,7 @@ function initCharts() {
   SECTION_TYPES.forEach(type => {
     const cfg = SECTION_CONFIG[type];
     if (!cfg) return;
+    if (!cfg || !cfg.chart) return;
     const dom = document.getElementById(cfg.chart);
     if (!dom) return;
 
@@ -599,7 +717,7 @@ function updateChart(sectionType, data) {
   
   const cfg = SECTION_CONFIG[sectionType];
   const customSec = customSections.find(s => s.name === sectionType);
-  const chartType = customSec ? customSec.chartType : "line";
+  const chartType = customSec ? (customSec.chartType || "line") : (cfg?.chartType || "line");
   const fields = customSec ? customSec.fields : (sectionType === "Concentration" ? [{name:"colisFlashe", color:"#D97706"}] : [{name:"colisAnnonces", color:"#2563EB"}, {name:"colisFlashe", color:"#93C5FD"}]);
 
   // Palette haute visibilité pour la comparaison
@@ -1269,6 +1387,14 @@ function attachEventListeners() {
     });
   }
 
+  // Import Section via Excel
+  const btnImportSec = document.getElementById("btn-import-section-excel");
+  const inputImportSec = document.getElementById("input-import-section-excel");
+  if (btnImportSec && inputImportSec) {
+    btnImportSec.addEventListener("click", () => inputImportSec.click());
+    inputImportSec.addEventListener("change", handleSectionExcelImport);
+  }
+
 
   // Sauvegarde & Import (Backup)
   const exportBackupBtn = document.getElementById("btn-export-backup");
@@ -1314,16 +1440,6 @@ document.getElementById("modal-overlay").addEventListener("click", e => {
   // Ajouter un champ dynamique
   const btnAddField = document.getElementById("btn-add-field");
   if (btnAddField) btnAddField.addEventListener("click", () => addDynamicField());
-
-  // Color presets
-  document.querySelectorAll(".color-preset").forEach(btn => {
-    btn.addEventListener("click", e => {
-      const color = e.target.dataset.color;
-      document.getElementById("modal-section-color").value = color;
-      document.querySelectorAll(".color-preset").forEach(b => b.classList.remove("active"));
-      e.target.classList.add("active");
-    });
-  });
 }
 
 /* ============================================================
@@ -1375,12 +1491,6 @@ function importFullBackup(event) {
    GESTION DES SECTIONS DYNAMIQUES
    ============================================================ */
 
-/** Couleurs prédéfinies */
-const COLOR_PRESETS = [
-  "#2563EB", "#059669", "#7C3AED", "#DC2626", "#D97706",
-  "#0891B2", "#BE185D", "#15803D", "#4F46E5", "#EA580C"
-];
-
 /** Charger les sections personnalisées depuis localStorage */
 function loadCustomSections() {
   try {
@@ -1388,15 +1498,27 @@ function loadCustomSections() {
     if (raw) {
       customSections = JSON.parse(raw);
     }
+
+    // IMPORTANT : on ne charge QUE les sections créées par l'utilisateur.
+    // Les sections par défaut ("default-*") ne doivent pas réapparaître.
     const orderRaw = localStorage.getItem(SECTION_ORDER_KEY);
     if (orderRaw) {
-      sectionOrder = JSON.parse(orderRaw);
+      const parsedOrder = JSON.parse(orderRaw);
+      sectionOrder = Array.isArray(parsedOrder) ? parsedOrder.filter(id => !String(id).startsWith("default-")) : [];
     } else {
       sectionOrder = customSections.map(s => s.id);
-      saveCustomSections();
     }
-    // Synchroniser SECTION_TYPES
-    SECTION_TYPES = customSections.map(s => s.name);
+
+    // Synchroniser SECTION_TYPES (uniquement custom)
+    customSections.forEach(s => {
+      if (!SECTION_TYPES.includes(s.name)) {
+        SECTION_TYPES.push(s.name);
+      }
+    });
+
+    // Nettoyage défensif au cas où l'ordre contiendrait des default-*
+    // (cela évite qu'ils reviennent après suppression et refresh)
+    saveCustomSections();
   } catch (e) {
     console.error("Erreur chargement sections:", e);
   }
@@ -1764,17 +1886,17 @@ function deleteSection(domId) {
 
   const sectionName = sectionEl.dataset.type;
 
-  // 1. Supprimer des sections personnalisées et de l'ordre
-  const customIdx = customSections.findIndex(s => s.name === sectionName);
-  if (customIdx !== -1) {
-    const sectionObj = customSections[customIdx];
-    customSections.splice(customIdx, 1);
-    
-    const orderIdx = sectionOrder.indexOf(sectionObj.id);
-    if (orderIdx !== -1) sectionOrder.splice(orderIdx, 1);
-    
-    saveCustomSections();
+  // IMPORTANT : on ne supprime que les sections créées par l'utilisateur.
+  const customSec = customSections.find(s => s.name === sectionName);
+  if (!customSec) {
+    alert("Impossible de supprimer une section par défaut (actuellement désactivé). Crée une section personnalisée puis supprime-la depuis l’interface.");
+    return;
   }
+
+  const internalId = customSec.id;
+  customSections = customSections.filter(s => s.id !== internalId);
+  sectionOrder = sectionOrder.filter(id => id !== internalId);
+  saveCustomSections();
 
   // 2. Nettoyer les configurations globales et instances
   const typeIdx = SECTION_TYPES.indexOf(sectionName);
@@ -1794,8 +1916,9 @@ function deleteSection(domId) {
   sectionEl.remove();
   renderNavigation();
   updateStatus(appData.length > 0);
-  alert("Section supprimée !");
+  // alert("Section supprimée !");
 }
+
 
 /** Réordonner les sections */
 function moveSection(sectionId, direction) {
@@ -1920,16 +2043,24 @@ window.onafterprint = () => {
 function initApp() {
   // Charger les sections personnalisées depuis localStorage
   loadCustomSections();
-  renderNavigation(); // Restaurer la navigation au démarrage
   
-  // Créer les sections personnalisées selon l'ordre sauvegardé
+  // Verrouillage : en mode "custom-only" on ne garde/affiche que les sections créées par l'utilisateur.
+  SECTION_TYPES = [];
+
+  // Rendu de TOUTES les sections (uniquement personnalisées) selon l'ordre sauvegardé
   sectionOrder.forEach(id => {
     const section = customSections.find(s => s.id === id);
-    if (section) createSectionElement(section);
+    if (section) {
+      // source-of-truth : name (customSections)
+      if (!SECTION_TYPES.includes(section.name)) SECTION_TYPES.push(section.name);
+      createSectionElement(section);
+    }
   });
 
+  renderNavigation();
   initCharts();
   attachEventListeners();
+
 
   if (loadFromLocalStorage()) {
     SECTION_TYPES.forEach(type => {
@@ -1941,9 +2072,11 @@ function initApp() {
     });
   } else {
     SECTION_TYPES.forEach(type => {
-      const tableId = SECTION_CONFIG[type].table;
+      const cfg = SECTION_CONFIG[type];
+      if (!cfg || !cfg.table) return;
+      const tableId = cfg.table;
       const tbody = document.querySelector(`#${tableId} tbody`);
-      const colCount = type === "Concentration" ? 4 : 5;
+      const colCount = (getFieldNamesForSection(type) || []).length + 3;
       if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="no-data-message">Aucune donnée — importez un fichier Excel</td></tr>`;
     });
   }
