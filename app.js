@@ -342,95 +342,116 @@ function handleSectionExcelImport(event) {
     try {
       const arrayBuffer = e.target.result;
       const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
-      if (json.length < 1) throw new Error("Le fichier Excel doit contenir au moins une ligne d'en-tête.");
+      const sheetNames = workbook.SheetNames || [];
+      if (sheetNames.length === 0) throw new Error("Le fichier Excel ne contient aucune feuille.");
 
-      const rawHeaders = json[0].map(h => String(h).trim());
-      
-      // Validation stricte de l'ordre des colonnes de base (Format Export)
-      if (rawHeaders[0] !== "Type" || rawHeaders[1] !== "Date") {
-        throw new Error("Format incorrect. Le fichier Excel doit avoir 'Type' en colonne A et 'Date' en colonne B. La première feuille sera utilisée comme nom de section.");
-      }
-
-      // Identification de la section cible via le nom de la première feuille
-      const sectionName = workbook.SheetNames[0];
-      if (!sectionName) throw new Error("Le nom de la feuille Excel est introuvable, impossible de déterminer le nom de la section.");
-
-      // Création dynamique de la section si elle n'existe pas encore
-      if (!SECTION_TYPES.includes(sectionName)) {
-        const fieldHeaders = rawHeaders.slice(2);
-        if (fieldHeaders.length === 0) throw new Error("Aucune colonne de données détectée après 'Type' et 'Date'.");
-
-        const fields = fieldHeaders.map((h, i) => ({
-          name: h,
-          color: COLOR_PRESETS[i % COLOR_PRESETS.length] || "#2563EB"
-        }));
-
-        const newId = "section-" + Date.now();
-        customSections.push({ id: newId, name: sectionName, chartType: "line", fields: fields });
-        sectionOrder.push(newId);
-        saveCustomSections();
-        SECTION_TYPES.push(sectionName);
-      }
-
-      const isStandard = DEFAULT_SECTION_TYPES.includes(sectionName);
-      const currentSection = customSections.find(s => s.name === sectionName);
-      
-      const newRows = [];
-      for (let i = 1; i < json.length; i++) {
-        const r = json[i];
-        if (!r || r.length < 2) continue;
-
-        // On ne prend que les lignes correspondant à la section identifiée
-        if (String(r[0] || "").trim() !== sectionName && isStandard) continue; // Only filter by 'Type' column for standard sections to avoid incorrect matching with sheet name
-
-        const dateVal = convertExcelDate(r[1]);
-        if (!dateVal) continue;
-
-        if (isStandard) {
-          // Mapping inverse pour les sections par défaut (gestion des libellés d'export)
-          const idxAnn = rawHeaders.indexOf("Colis annoncé");
-          const idxFla = rawHeaders.indexOf("Colis Flashé");
-          
-          newRows.push({
-            type: sectionName,
-            date: dateVal,
-            colisAnnonces: idxAnn !== -1 ? parseNumber(r[idxAnn]) : 0,
-            colisFlashe: idxFla !== -1 ? parseNumber(r[idxFla]) : 0,
-            dynamicFields: {}
-          });
-        } else if (currentSection) {
-          // Mapping pour les sections personnalisées
-          const dynamicFields = {};
-          currentSection.fields.forEach(f => {
-            const fIdx = rawHeaders.indexOf(f.name);
-            dynamicFields[f.name] = fIdx !== -1 ? parseNumber(r[fIdx]) : 0;
-          });
-          newRows.push({ type: sectionName, date: dateVal, dynamicFields });
-        }
-      }
-
-      // Fusion avec déduplication (Type + Date ISO)
+      // Déduplication sur l'ensemble des feuilles importées
       const existingKeys = new Set(appData.map(r => `${r.type}|${r.date?.toISOString()}`));
-      const uniqueNew = newRows.filter(r => {
-        const key = `${r.type}|${r.date?.toISOString()}`;
-        if (existingKeys.has(key)) return false;
-        existingKeys.add(key);
-        return true;
+      const uniqueNewAll = [];
+      const importStats = []; // { sectionName, added }
+
+      sheetNames.forEach((sheetName) => {
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+
+        if (!json || json.length < 1) return;
+
+        const rawHeaders = json[0].map(h => String(h).trim());
+
+        // Validation stricte de l'ordre des colonnes de base (Format Export)
+        if (rawHeaders[0] !== "Type" || rawHeaders[1] !== "Date") {
+          throw new Error(`Format incorrect sur la feuille "${sheetName}". Attendu : 'Type' en A et 'Date' en B.`);
+        }
+
+        const sectionName = sheetName;
+        if (!sectionName) throw new Error("Le nom de la feuille Excel est introuvable, impossible de déterminer le nom de la section.");
+
+        // Création dynamique de la section si elle n'existe pas encore
+        if (!SECTION_TYPES.includes(sectionName) && !DEFAULT_SECTION_TYPES.includes(sectionName)) {
+          const fieldHeaders = rawHeaders.slice(2);
+          if (fieldHeaders.length === 0) throw new Error(`Aucune colonne de données détectée après 'Type' et 'Date' sur "${sectionName}".`);
+
+          const fields = fieldHeaders.map((h, i) => ({
+            name: h,
+            color: COLOR_PRESETS[i % COLOR_PRESETS.length] || "#2563EB"
+          }));
+
+          const newId = "section-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+          customSections.push({ id: newId, name: sectionName, chartType: "line", fields: fields });
+          sectionOrder.push(newId);
+          saveCustomSections();
+          SECTION_TYPES.push(sectionName);
+        }
+
+        const isStandard = DEFAULT_SECTION_TYPES.includes(sectionName);
+        const currentSection = customSections.find(s => s.name === sectionName);
+
+        const newRows = [];
+        for (let i = 1; i < json.length; i++) {
+          const r = json[i];
+          if (!r || r.length < 2) continue;
+
+          // Pour les sections standard, le fichier exporté contient 'Type' = section.
+          // Pour éviter les confusions, on filtre seulement dans ce cas.
+          if (isStandard && String(r[0] || "").trim() !== sectionName) continue;
+
+          const dateVal = convertExcelDate(r[1]);
+          if (!dateVal) continue;
+
+          if (isStandard) {
+            const idxAnn = rawHeaders.indexOf("Colis annoncé");
+            const idxFla = rawHeaders.indexOf("Colis Flashé");
+
+            newRows.push({
+              type: sectionName,
+              date: dateVal,
+              colisAnnonces: idxAnn !== -1 ? parseNumber(r[idxAnn]) : 0,
+              colisFlashe: idxFla !== -1 ? parseNumber(r[idxFla]) : 0,
+              dynamicFields: {}
+            });
+          } else if (currentSection) {
+            const dynamicFields = {};
+            currentSection.fields.forEach(f => {
+              const fIdx = rawHeaders.indexOf(f.name);
+              dynamicFields[f.name] = fIdx !== -1 ? parseNumber(r[fIdx]) : 0;
+            });
+            newRows.push({ type: sectionName, date: dateVal, dynamicFields });
+          }
+        }
+
+        const uniqueNew = newRows.filter(r => {
+          const key = `${r.type}|${r.date?.toISOString()}`;
+          if (existingKeys.has(key)) return false;
+          existingKeys.add(key);
+          return true;
+        });
+
+        if (uniqueNew.length > 0) {
+          uniqueNewAll.push(...uniqueNew);
+          importStats.push({ sectionName, added: uniqueNew.length });
+        }
       });
 
-      if (uniqueNew.length === 0) {
-        alert(`Aucune nouvelle donnée trouvée pour la section "${sectionName}".`);
+      if (uniqueNewAll.length === 0) {
+        alert("Aucune nouvelle donnée trouvée dans les feuilles importées.");
         return;
       }
 
-      appData = appData.concat(uniqueNew);
+      appData = appData.concat(uniqueNewAll);
       saveToLocalStorage();
-      
-      alert(`${uniqueNew.length} ligne(s) importée(s) avec succès dans "${sectionName}".`);
-      location.reload(); 
+
+      const totalAdded = uniqueNewAll.length;
+      const details = importStats.map(s => `${s.added} dans "${s.sectionName}"`).join("\n");
+      alert(`${totalAdded} ligne(s) importée(s) avec succès.\n${details}`);
+
+      // Refresh UI
+      SECTION_TYPES.forEach(type => {
+        populateFilters(type);
+        renderSection(type);
+      });
+
+      location.reload();
     } catch (err) {
       console.error(err);
       alert("Erreur lors de l'import : " + err.message);
