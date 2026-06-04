@@ -1009,9 +1009,18 @@ function exportSectionExcel(sectionType) {
     return [...base, ...fieldValues];
   });
 
+  const sanitizeExcelSheetName = (name) => {
+    const cleaned = String(name ?? "").trim();
+    // Excel interdit : : \ / ? * [ ] et limite à 31 caractères
+    const withoutInvalid = cleaned.replace(/[\\/:?*\[\]]/g, "_");
+    const limited = withoutInvalid.slice(0, 31);
+    return limited.length > 0 ? limited : "Données";
+  };
+
   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Données");
+  const sheetName = sanitizeExcelSheetName(sectionType);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   XLSX.writeFile(wb, `export-${sectionType.replace(/\s+/g, "_").toLowerCase()}.xlsx`);
 }
 
