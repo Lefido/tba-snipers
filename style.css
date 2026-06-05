@@ -1521,3 +1521,80 @@ body {
     margin: 20px 0 !important;
   }
 }
+
+/* ============================================
+   LAYOUT DESKTOP (Sidebar 30/70)
+   ============================================ */
+@media (min-width: 1024px) {
+  /* 1. Main Header : Pleine largeur en haut */
+  .main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    z-index: 1100;
+    background: var(--surface);
+  }
+
+  .header-branding {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-menu {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* Header Controls : Barre horizontale 100% sous le branding */
+  .header-controls {
+    width: 100%;
+    padding: 12px 24px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    justify-content: center;
+  }
+
+  /* 2. Header Nav : Sidebar verticale à gauche */
+  .header-nav {
+    
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 20%;
+    height: 80vh;
+    top: var(--header-total-height, 140px); /* Calculé dynamiquement par JS */
+    overflow-y: auto;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    z-index: 1010;
+    flex-direction: column;
+    flex-wrap: nowrap; /* Empêche le passage sur plusieurs colonnes */
+    justify-content: flex-start;
+    gap: 5px;
+  }
+
+  .header-nav a {
+    width: 100%;
+    text-align: left;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
+
+  /* 3. Main Container : Décalage pour sidebar et header fixe */
+  .main-container {
+    margin: var(--header-total-height, 140px) 0 0 20%;
+    width: 80%;
+    max-width: none; /* Fluidité totale */
+    padding: 32px;
+  }
+
+  /* Masquage des titres mobiles pour un look sidebar propre */
+  .header-menu .mobile-section-title {
+    display: none;
+  }
+}

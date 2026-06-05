@@ -2066,6 +2066,19 @@ window.onafterprint = () => {
   document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('no-print'));
 };
 
+/**
+ * Synchronise la position de la sidebar avec la hauteur des contrôles (Desktop)
+ */
+function syncSidebarLayout() {
+  if (window.innerWidth >= 1024) {
+    const header = document.querySelector('.main-header');
+    if (header) {
+      // On utilise offsetHeight pour obtenir la hauteur réelle avec padding/bordures
+      document.documentElement.style.setProperty('--header-total-height', header.offsetHeight + 'px');
+    }
+  }
+}
+
 /* ============================================================
    POINT D'ENTRÉE
    ============================================================ */
@@ -2090,6 +2103,10 @@ function initApp() {
   renderNavigation();
   initCharts();
   attachEventListeners();
+  
+  // Gestion du layout desktop
+  syncSidebarLayout();
+  window.addEventListener('resize', syncSidebarLayout);
 
 
   if (loadFromLocalStorage()) {
