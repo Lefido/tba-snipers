@@ -1052,19 +1052,38 @@ function exportSectionExcel(sectionType) {
 function clearAllData() {
   if (!confirm("Voulez-vous vraiment supprimer toutes les données ?")) return;
 
+  // Supprimer les données
   appData = [];
   localStorage.removeItem(STORAGE_KEY);
-  updateStatus(false);
 
-  SECTION_TYPES.forEach(type => {
-    renderEmptyChart(type);
-    const tableId = SECTION_CONFIG[type].table;
-    const tbody = document.querySelector(`#${tableId} tbody`);
-    const colCount = getFieldNamesForSection(type).length + 3;
-    if (tbody) tbody.innerHTML = `<tr><td colspan="${colCount}" class="no-data-message">Aucune donnée — importez un fichier Excel</td></tr>`;
-    populateFilters(type);
+  // Supprimer aussi les sections custom (config) pour que rien ne reste affiché
+  // (votre demande: "supprime également les sections")
+  customSections = [];
+  sectionOrder = [];
+  localStorage.removeItem(CUSTOM_SECTIONS_KEY);
+  localStorage.removeItem(SECTION_ORDER_KEY);
+
+  // Nettoyer les éventuelles instances ECharts / config restantes pour les types
+  Object.keys(chartInstances).forEach(k => {
+    try {
+      chartInstances[k].dispose();
+    } catch (e) {}
+    delete chartInstances[k];
   });
 
+  SECTION_TYPES = [];
+  SECTION_CONFIG = { ...DEFAULT_SECTION_CONFIG };
+
+  updateStatus(false);
+
+  // Supprimer le DOM des sections existantes
+  document.querySelectorAll('.dashboard-section').forEach(el => el.remove());
+
+  // Réinitialiser navigation (liens)
+  const nav = document.querySelector('.header-nav');
+  if (nav) nav.innerHTML = '';
+
+  // Réinitialiser les états des filtres (si des éléments persistent encore)
   document.querySelectorAll(".filters-bar select").forEach(sel => {
     if (sel.classList.contains("filter-granularity")) {
       sel.value = "day";
