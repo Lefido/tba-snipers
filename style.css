@@ -543,7 +543,7 @@ body {
 /* ============================================
    RESPONSIVE
    ============================================ */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .main-header {
     flex-direction: row;
     justify-content: space-between;
@@ -555,7 +555,6 @@ body {
     display: flex;
   }
 
-  /* Mobile: keep identical layout (nav before controls) */
   .header-nav { order: 0; }
   .header-controls { order: 1; }
 
@@ -1411,7 +1410,6 @@ body {
 .print-only { display: none !important; }
 
 @media print {
-  /* Masquage global des éléments UI */
   .no-print, 
   .main-header, 
   .main-footer, 
@@ -1525,8 +1523,9 @@ body {
 /* ============================================
    LAYOUT DESKTOP (Sidebar 30/70)
    ============================================ */
+   /* 1. Main Header : Pleine largeur en haut */
 @media (min-width: 1024px) {
-  /* 1. Main Header : Pleine largeur en haut */
+  
   .main-header {
     position: fixed;
     top: 0;
@@ -1549,7 +1548,6 @@ body {
     flex-direction: column;
   }
 
-  /* Header Controls : Barre horizontale 100% sous le branding */
   .header-controls {
     width: 100%;
     padding: 12px 24px;
@@ -1558,7 +1556,7 @@ body {
     justify-content: center;
   }
 
-  /* 2. Header Nav : Sidebar verticale à gauche */
+
   .header-nav {
     
     position: fixed;
@@ -1566,14 +1564,14 @@ body {
     bottom: 0;
     width: 20%;
     height: 80vh;
-    top: var(--header-total-height, 140px); /* Calculé dynamiquement par JS */
+    top: var(--header-total-height, 140px); 
     overflow-y: auto;
     background: var(--bg);
     border-right: 1px solid var(--border);
     padding: 20px;
     z-index: 1010;
     flex-direction: column;
-    flex-wrap: nowrap; /* Empêche le passage sur plusieurs colonnes */
+    flex-wrap: nowrap; 
     justify-content: flex-start;
     gap: 5px;
   }
@@ -1585,15 +1583,14 @@ body {
     background: var(--surface);
   }
 
-  /* 3. Main Container : Décalage pour sidebar et header fixe */
+
   .main-container {
     margin: var(--header-total-height, 140px) 0 0 20%;
     width: 80%;
-    max-width: none; /* Fluidité totale */
+    max-width: none; 
     padding: 32px;
   }
 
-  /* Masquage des titres mobiles pour un look sidebar propre */
   .header-menu .mobile-section-title {
     display: none;
   }
