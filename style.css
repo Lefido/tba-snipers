@@ -170,6 +170,15 @@ body {
   border-color: var(--primary-light);
 }
 
+/* Section active (mise à jour via IntersectionObserver) */
+.header-nav a.active-nav {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-light);
+  box-shadow: 0 6px 18px rgb(37 99 235 / 0.18);
+} 
+
+
 .header-controls {
   width: 100%;
   display: flex;
@@ -1593,23 +1602,29 @@ body {
 
 
   .header-nav {
-    
     position: fixed;
     left: 0;
-    bottom: 0;
     width: 20%;
-    height: 80vh;
-    top: var(--header-total-height, 140px); 
+    top: var(--header-total-height, 140px);
+
+    /* Fix : on force une hauteur calculée sans dépendre de padding/bottom */
+    height: calc(100vh - var(--header-total-height, 140px));
+    bottom: auto;
+
     overflow-y: auto;
+    box-sizing: border-box;
     background: var(--bg);
     border-right: 1px solid var(--border);
     padding: 20px;
     z-index: 1010;
     flex-direction: column;
-    flex-wrap: nowrap; 
+    flex-wrap: nowrap;
     justify-content: flex-start;
     gap: 5px;
   }
+
+
+
 
   .header-nav a {
     width: 100%;
@@ -1620,11 +1635,14 @@ body {
 
 
   .main-container {
+    /* Décale le contenu pour laisser la place au header fixe + la sidebar */
     margin: var(--header-total-height, 140px) 0 0 20%;
     width: 80%;
-    max-width: none; 
+    max-width: none;
     padding: 32px;
   }
+
+
 
   .header-menu .mobile-section-title {
     display: none;

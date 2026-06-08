@@ -1855,7 +1855,11 @@ function renderNavigation() {
       nav.appendChild(link);
     }
   });
+
+  // Relancer la mise en évidence active après reconstruction nav
+  updateActiveNavFromScroll();
 }
+
 
 /** Attacher les événements pour une section */
 function attachSectionEvents(sectionEl, sectionName, internalId) {
@@ -2102,9 +2106,99 @@ function syncSidebarLayout() {
    POINT D'ENTRÉE
    ============================================================ */
 
+let sectionObserver = null;
+
+function setupSectionObserver() {
+  // On observe les sections pour savoir lesquelles sont visibles.
+  // Le but est de mettre en évidence le lien correspondant dans .header-nav.
+  if (sectionObserver) {
+    try { sectionObserver.disconnect(); } catch (e) {}
+  }
+
+  const sections = Array.from(document.querySelectorAll('.dashboard-section'));
+  if (sections.length === 0) return;
+
+  const navLinks = () => Array.from(document.querySelectorAll('.header-nav a'));
+
+  // IntersectionObserver : on choisit la section la plus “visible”.
+  const visibilityById = new Map();
+  let lastActiveSlug = null;
+
+  sectionObserver = new IntersectionObserver((entries) => {
+    let changed = false;
+    for (const entry of entries) {
+      const id = entry.target.id;
+      visibilityById.set(id, entry.intersectionRatio || 0);
+      if (entry.isIntersecting) changed = true;
+    }
+    if (!changed) return;
+
+    // Récupérer la section la plus visible parmi celles observées
+    let best = null;
+    let bestRatio = -1;
+    for (const [id, ratio] of visibilityById.entries()) {
+      if (ratio > bestRatio) {
+        bestRatio = ratio;
+        best = id;
+      }
+    }
+    if (!best) return;
+
+    // Déterminer quand mettre à jour la nav : quand le slug change
+    if (best !== lastActiveSlug && bestRatio >= 0.15) {
+      lastActiveSlug = best;
+      updateActiveNav(best);
+    }
+  }, {
+    root: null,
+    // Laisser une zone de lecture pour sélectionner “la section courante”
+    rootMargin: '-20% 0px -65% 0px',
+    threshold: [0, 0.1, 0.15, 0.25, 0.5, 0.75, 1]
+  });
+
+  sections.forEach(sec => sectionObserver.observe(sec));
+
+  // Sync immédiat
+  updateActiveNavFromScroll();
+}
+
+function updateActiveNav(activeSectionId) {
+  const links = document.querySelectorAll('.header-nav a');
+  links.forEach(a => {
+    const href = a.getAttribute('href') || '';
+    const targetId = href.startsWith('#') ? href.slice(1) : href;
+    if (targetId && targetId === activeSectionId) a.classList.add('active-nav');
+    else a.classList.remove('active-nav');
+  });
+}
+
+function updateActiveNavFromScroll() {
+  // Choisit la section la plus proche du “milieu” de la fenêtre
+  const sections = Array.from(document.querySelectorAll('.dashboard-section'));
+  if (sections.length === 0) return;
+
+  const mid = window.innerHeight * 0.45;
+  let best = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+
+  sections.forEach(sec => {
+    const r = sec.getBoundingClientRect();
+    // distance entre le milieu de l'écran et le milieu de la section
+    const sectionMid = r.top + r.height / 2;
+    const dist = Math.abs(sectionMid - mid);
+    if (dist < bestDist && r.bottom > 0 && r.top < window.innerHeight) {
+      bestDist = dist;
+      best = sec.id;
+    }
+  });
+
+  if (best) updateActiveNav(best);
+}
+
 function initApp() {
   // Charger les sections personnalisées depuis localStorage
   loadCustomSections();
+
   
   // Verrouillage : en mode "custom-only" on ne garde/affiche que les sections créées par l'utilisateur.
   SECTION_TYPES = [];
@@ -2127,8 +2221,33 @@ function initApp() {
   syncSidebarLayout();
   window.addEventListener('resize', syncSidebarLayout);
 
+  // Observer la section courante pour changer la couleur des liens header-nav
+  setupSectionObserver();
+
+  // Recalcul renforcé: le layout desktop (header fixed + sidebar) décale les positions
+  // vers ~1380px/desktop, donc on force la synchro sur plusieurs événements.
+  const recalcActiveNav = () => updateActiveNavFromScroll();
+
+  // after first paint + 2e frame (reflow)
+  window.requestAnimationFrame(() => recalcActiveNav());
+  window.requestAnimationFrame(() => recalcActiveNav());
+
+  // timer safety
+  setTimeout(() => recalcActiveNav(), 100);
+  setTimeout(() => recalcActiveNav(), 300);
+
+  // scroll + resize (desktop)
+  window.addEventListener('scroll', recalcActiveNav, { passive: true });
+  window.addEventListener('resize', () => {
+    // force aussi la mise à jour du margin header avant recalcul
+    syncSidebarLayout();
+    recalcActiveNav();
+  }, { passive: true });
+
+
 
   if (loadFromLocalStorage()) {
+
     SECTION_TYPES.forEach(type => {
       populateFilters(type);
     });

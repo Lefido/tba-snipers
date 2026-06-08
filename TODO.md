@@ -1,10 +1,7 @@
-# TODO - sections custom uniquement
+# TODO — Header nav responsive (desktop)
 
-- [x] app.js: verrouiller l’initialisation en mode "custom-only" (source unique = sectionOrder / customSections)
-- [x] app.js: supprimer la branche de suppression "default-*" dans deleteSection() (ne toucher qu’aux sections custom)
-
-- [ ] app.js: s’assurer que updateStatus()/clearAllData() ne réinjecte jamais des types par défaut via SECTION_TYPES
-- [ ] Tester: refresh sans données => 0 section
-- [ ] Tester: créer une section custom => seule cette section s’affiche
-- [ ] Tester: supprimer une section custom => elle disparaît et aucune section par défaut ne réapparaît
+- [x] Analyser l’état actuel : .header-nav desktop a une `height: 80vh` fixe
+- [x] Modifier `style.css` pour que `.header-nav` prenne la hauteur restante : `top: var(--header-total-height, 140px); bottom: 0;` et suppression de `height: 80vh`
+- [ ] Tester en desktop : 1366x768, 1920x1080, 2560x1440 (scroll interne et non-coupure)
+- [ ] Vérifier que la valeur `--header-total-height` est bien recalculée au resize (app.js)
 
