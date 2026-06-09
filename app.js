@@ -1745,17 +1745,17 @@ function createSectionElement(section) {
         <button class="btn btn-secondary btn-move-up" title="Monter"><i class="fa-solid fa-arrow-up"></i></button>
         <button class="btn btn-secondary btn-move-down" title="Descendre"><i class="fa-solid fa-arrow-down"></i></button>
         </div>
-        <button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> Ajout manuel</button>
+<button class="btn btn-secondary btn-add-manual" data-section="${section.name}"><i class="fa-solid fa-plus"></i> <span class="action-label">Ajout manuel</span></button>
         
-        <label class="btn btn-secondary file-label">
-          <span><i class="fa-solid fa-file-import"></i> Importer Excel</span>
+<label class="btn btn-secondary file-label">
+          <span><i class="fa-solid fa-file-import"></i> <span class="action-label">Importer Excel</span></span>
           <input type="file" accept=".xlsx" class="file-input" data-section="${section.name}">
         </label>
-        <button class="btn btn-secondary btn-export-excel" data-section="${section.name}"><i class="fa-solid fa-file-excel"></i> Exporter Excel</button>
-        <button class="btn btn-secondary btn-export" data-section="${section.name}"><i class="fa-solid fa-camera"></i> Exporter PNG</button>
+<button class="btn btn-secondary btn-export-excel" data-section="${section.name}"><i class="fa-solid fa-file-excel"></i> <span class="action-label">Exporter Excel</span></button>
+<button class="btn btn-secondary btn-export" data-section="${section.name}"><i class="fa-solid fa-camera"></i> <span class="action-label">Exporter PNG</span></button>
         
         
-         <button class="btn btn-secondary btn-edit-section" title="Modifier la section"><i class="fa-solid fa-pen-to-square"></i> Modifier section</button>
+<button class="btn btn-secondary btn-edit-section" title="Modifier la section"><i class="fa-solid fa-pen-to-square"></i> <span class="action-label">Modifier section</span></button>
         <button class="btn btn-secondary btn-delete-section" title="Supprimer la section"><i class="fa-solid fa-trash"></i></button>
       </div>
     </div>

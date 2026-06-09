@@ -553,6 +553,11 @@ body {
    RESPONSIVE
    ============================================ */
 @media (max-width: 1023px) {
+  /* Sur mobile: garder uniquement les icônes dans .section-actions */
+  .section-actions .action-label {
+    display: none;
+  }
+
   .main-header {
     flex-direction: row;
     justify-content: space-between;
