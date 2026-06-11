@@ -43,17 +43,19 @@
        
         <input type="file" id="input-import-section-excel" accept=".xlsx" style="display:none">
 
+        <!-- Case à cocher générale pour l'impression -->
+        <label class="btn btn-secondary no-print" style="cursor:pointer; user-select:none; padding: 10px 18px; display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="print-select-all" style="transform: scale(1.2); accent-color: var(--primary);">
+          <span>Cocher toutes les sections</span>
+        </label>
+
         <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
 
          <button id="btn-import-section-excel" class="btn btn-secondary" title="Créer une section à partir d'un fichier Excel">
           <i class="fa-solid fa-file-excel"></i> Importer Section (Excel)
         </button>
         
-        <!-- Case à cocher générale pour l'impression -->
-        <label class="btn btn-secondary no-print" style="cursor:pointer; user-select:none; padding: 10px 18px; display:flex; align-items:center; gap:10px;">
-          <input type="checkbox" id="print-select-all" style="transform: scale(1.2); accent-color: var(--primary);">
-          <span>Sélectionner toute les sections</span>
-        </label>
+        
 
         <!-- Bouton d'impression du rapport -->
         <button id="btn-print-report" class="btn btn-secondary no-print" title="Imprimer le rapport"><i class="fa-solid fa-print"></i> Imprimer le rapport</button>
