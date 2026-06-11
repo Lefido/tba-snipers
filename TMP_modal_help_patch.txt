@@ -1,0 +1,5 @@
+Plan modif (pas encore appliquée):
+- Modifier index.html pour ajouter un modal d’aide minimal avec id="modal-help-overlay".
+- Le modal doit contenir un bouton fermer id="modal-help-close" ou utiliser overlay click.
+- Aucune autre partie du HTML ne doit être changée.
+

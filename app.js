@@ -474,7 +474,8 @@ function getFiltersForSection(sectionType) {
     day: document.getElementById(`filter-day-${slug}`)?.value || "",
     month: document.getElementById(`filter-month-${slug}`)?.value || "",
     years: selectedYears,
-    granularity: document.getElementById(`filter-granularity-${slug}`)?.value || "day"
+    granularity: document.getElementById(`filter-granularity-${slug}`)?.value || "day",
+    showChartTotals: document.getElementById(`filter-totals-${slug}`)?.checked || false
   };
 }
 
@@ -741,6 +742,18 @@ function updateChart(sectionType, data) {
   const chartType = customSec ? (customSec.chartType || "line") : (cfg?.chartType || "line");
   const fields = customSec ? customSec.fields : (sectionType === "Concentration" ? [{name:"colisFlashe", color:"#D97706"}] : [{name:"colisAnnonces", color:"#2563EB"}, {name:"colisFlashe", color:"#93C5FD"}]);
 
+  // Calcul des totaux par champ pour l'affichage dynamique
+  const filtered = filterData(data, filters);
+  const fieldSummaries = fields.map(field => {
+    const sum = filtered.reduce((acc, row) => acc + (row.dynamicFields?.[field.name] || row[field.name] || 0), 0);
+    const label = field.name === "colisAnnonces" ? "Annoncé" : (field.name === "colisFlashe" ? "Flashé" : field.name);
+    return { label, sum, color: field.color };
+  });
+
+  const subtextDisplay = filters.showChartTotals 
+    ? fieldSummaries.map(s => `${s.label}: ${s.sum.toLocaleString('fr-FR')}`).join('  |  ')
+    : "";
+
   // Palette haute visibilité pour la comparaison
   const comparisonPalette = [
     '#2563EB', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', 
@@ -756,8 +769,7 @@ function updateChart(sectionType, data) {
     filters.years.forEach((year, yearIdx) => {
       const yearData = data.filter(r => r.date && String(r.date.getFullYear()) === year);
       // On filtre aussi selon mois/jour si sélectionnés
-      const tempFilters = { ...filters, years: [year] };
-      const filteredYearData = filterData(yearData, tempFilters);
+      const filteredYearData = filterData(yearData, { ...filters, years: [year] });
       const grouped = groupDataDouble(filteredYearData, filters.granularity, sectionType, true);
       
       if (grouped.categories.length > globalCategories.length) globalCategories = grouped.categories;
@@ -774,7 +786,6 @@ function updateChart(sectionType, data) {
     });
   } else {
     // MODE NORMAL : Chronologique
-    const filtered = filterData(data, filters);
     const grouped = groupDataDouble(filtered, filters.granularity, sectionType, false);
     globalCategories = grouped.categories;
 
@@ -826,6 +837,15 @@ function updateChart(sectionType, data) {
   const option = {
     animationDuration: 800,
     animationEasing: "cubicOut",
+    title: {
+      text: filters.showChartTotals ? 'Récapitulatif des flux' : '',
+      subtext: subtextDisplay,
+      right: 20,
+      top: 10,
+      textAlign: 'right',
+      textStyle: { fontSize: 12, color: '#64748b', fontWeight: 'normal' },
+      subtextStyle: { fontSize: 14, color: '#1e293b', fontWeight: '600' }
+    },
     tooltip: {
       trigger: "axis",
       backgroundColor: "rgba(255,255,255,0.95)",
@@ -880,6 +900,12 @@ function updateTable(sectionType, data) {
   if (!table) return;
   const thead = table.querySelector("thead");
   const tbody = table.querySelector("tbody");
+  let tfoot = table.querySelector("tfoot");
+  
+  if (!tfoot) {
+    tfoot = document.createElement("tfoot");
+    table.appendChild(tfoot);
+  }
 
   // Get field names for this section type
   const fieldNames = getFieldNamesForSection(sectionType);
@@ -922,6 +948,7 @@ function updateTable(sectionType, data) {
 
   tbody.innerHTML = "";
   const colCount = fieldNames.length + 3; // Type + Date + Actions = 3
+  tfoot.innerHTML = "";
 
   if (filtered.length === 0) {
     const tr = document.createElement("tr");
@@ -935,6 +962,10 @@ function updateTable(sectionType, data) {
     const dateB = b.date ? b.date.getTime() : 0;
     return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
   });
+
+  // Initialisation des totaux
+  const colTotals = {};
+  fieldNames.forEach(fn => colTotals[fn] = 0);
 
   sorted.forEach(row => {
     const realIndex = appData.indexOf(row);
@@ -955,6 +986,7 @@ function updateTable(sectionType, data) {
         fieldValue = row.colisFlashe;
       }
       
+      colTotals[fieldName] += fieldValue;
       cellsHtml += `<td>${fieldValue}</td>`;
     });
     
@@ -975,6 +1007,16 @@ function updateTable(sectionType, data) {
   tbody.querySelectorAll(".btn-delete").forEach(btn => {
     btn.addEventListener("click", () => deleteRow(parseInt(btn.dataset.index, 10)));
   });
+
+  // Construction du pied de page (Totaux)
+  const footerTr = document.createElement("tr");
+  let footerHtml = `<td colspan="2" class="total-label">Totaux sur la sélection</td>`;
+  fieldNames.forEach(fn => {
+    footerHtml += `<td>${colTotals[fn].toLocaleString('fr-FR')}</td>`;
+  });
+  footerHtml += `<td></td>`;
+  footerTr.innerHTML = footerHtml;
+  tfoot.appendChild(footerTr);
 }
 
 /* ============================================================
@@ -1788,6 +1830,13 @@ function createSectionElement(section) {
           <option value="year">Année</option>
         </select>
       </div>
+
+      <div class="filter-group" style="min-width: auto; flex: 0 1 auto;">
+        <label class="checkbox-item" style="margin: 0; padding: 8px 12px; border: 1px solid var(--border);">
+          <input type="checkbox" id="filter-totals-${slug}" class="filter-show-totals" data-section="${section.name}">
+          <span>Afficher Totaux</span>
+        </label>
+      </div>
     </div>
     <div id="chart-${sectionId}" class="chart-container"></div>
     <details class="table-details">
@@ -1927,6 +1976,15 @@ function attachSectionEvents(sectionEl, sectionName, internalId) {
       renderSection(sectionName);
     });
   });
+
+  // Listener spécifique pour la case à cocher des totaux
+  const totalsToggle = sectionEl.querySelector(".filter-show-totals");
+  if (totalsToggle) {
+    totalsToggle.addEventListener("change", () => {
+      saveFiltersState();
+      renderSection(sectionName);
+    });
+  }
 }
 
 /** Ajouter un lien dans la navigation */
@@ -2062,6 +2120,35 @@ window.onbeforeprint = () => {
       const periodText = f.years.length > 0 ? f.years.join(', ') : 'Toutes les années';
       const monthText = f.month ? MONTH_NAMES_FR[parseInt(f.month, 10) - 1] : 'Tous les mois';
       const dayText = f.day ? `Jour : ${f.day}` : 'Tous les jours';
+
+      // Calcul des totaux pour le rapport
+      const sectionData = appData.filter(r => r.type === sectionName);
+      const filtered = filterData(sectionData, f);
+      const fieldNames = getFieldNamesForSection(sectionName);
+      const totals = {};
+      fieldNames.forEach(fn => {
+        totals[fn] = filtered.reduce((acc, row) => acc + (row.dynamicFields?.[fn] || row[fn] || 0), 0);
+      });
+
+      // Génération des cartes KPI
+      let kpiHtml = '<div class="print-kpi-grid">';
+      fieldNames.forEach(fn => {
+        const label = fn === "colisAnnonces" ? "Annoncé" : (fn === "colisFlashe" ? "Flashé" : fn);
+        kpiHtml += `<div class="print-kpi-card">
+                      <span class="label">${label}</span>
+                      <span class="value">${totals[fn].toLocaleString('fr-FR')}</span>
+                    </div>`;
+      });
+      
+      // Ajout d'un calcul de taux de réalisation si applicable
+      if (totals.colisAnnonces > 0 && totals.colisFlashe !== undefined) {
+        const rate = ((totals.colisFlashe / totals.colisAnnonces) * 100).toFixed(1);
+        kpiHtml += `<div class="print-kpi-card">
+                      <span class="label">Taux Réalisation</span>
+                      <span class="value">${rate}%</span>
+                    </div>`;
+      }
+      kpiHtml += '</div>';
       
       const granularityMap = {
         'day': 'Quotidien',
@@ -2072,8 +2159,15 @@ window.onbeforeprint = () => {
 
       const summary = section.querySelector('.print-filter-summary');
       if (summary) {
-        summary.innerHTML = `<strong>Période d'analyse :</strong> ${periodText} &bull; ${monthText} &bull; ${dayText}<br>` +
-                            `<strong>Niveau de détail :</strong> Regroupement ${granularityMap[f.granularity] || f.granularity}`;
+        summary.innerHTML = `
+          <div style="margin-bottom: 10px;">
+            <strong>Période :</strong> ${periodText} &bull; ${monthText} &bull; ${dayText} | 
+            <strong>Granularité :</strong> ${granularityMap[f.granularity] || f.granularity}
+          </div>
+          ${kpiHtml}
+          <div class="print-analysis-text">
+            Observations : Sur cette sélection, le volume total cumulé s'élève à <strong>${Object.values(totals).reduce((a,b)=>a+b,0).toLocaleString('fr-FR')}</strong> unités réparties sur <strong>${filtered.length}</strong> points de données.
+          </div>`;
       }
       
       // Redimensionner les graphiques pour la largeur d'impression
