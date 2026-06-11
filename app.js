@@ -1017,6 +1017,22 @@ function updateTable(sectionType, data) {
   footerHtml += `<td></td>`;
   footerTr.innerHTML = footerHtml;
   tfoot.appendChild(footerTr);
+
+  // Mise à jour du résumé (summary) avec les totaux
+  const summary = table.closest('details')?.querySelector('summary');
+  if (summary) {
+    let totalsPreview = summary.querySelector('.summary-totals-preview');
+    if (!totalsPreview) {
+      totalsPreview = document.createElement('span');
+      totalsPreview.className = 'summary-totals-preview';
+      summary.appendChild(totalsPreview);
+    }
+    const previewHtml = fieldNames.map(fn => {
+      const label = fn === "colisAnnonces" ? "Annoncé" : (fn === "colisFlashe" ? "Flashé" : fn);
+      return `<span class="preview-item">${label}: <strong>${colTotals[fn].toLocaleString('fr-FR')}</strong></span>`;
+    }).join('<span class="preview-sep">|</span> ');
+    totalsPreview.innerHTML = previewHtml;
+  }
 }
 
 /* ============================================================

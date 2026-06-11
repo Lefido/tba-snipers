@@ -494,6 +494,36 @@ body {
   background: #f1f5f9;
 }
 
+.summary-totals-preview {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  background: var(--surface);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  pointer-events: none; /* Évite d'interférer avec le clic du summary */
+}
+
+.summary-totals-preview .preview-item strong {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.summary-totals-preview .preview-sep {
+  color: var(--border);
+  font-weight: 300;
+}
+
+/* Masquer le résumé sur très petit écran pour éviter le chevauchement */
+@media (max-width: 480px) {
+  .summary-totals-preview { display: none; }
+}
+
 .table-details .table-wrapper {
   border: none;
   border-radius: 0;
