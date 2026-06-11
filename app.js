@@ -1978,6 +1978,26 @@ function attachSectionEvents(sectionEl, sectionName, internalId) {
   const printCheckbox = sectionEl.querySelector('.section-print-checkbox');
   if (printCheckbox) {
     printCheckbox.addEventListener('change', updatePrintButtonState);
+
+    // Permet de cliquer sur le libellé/zone de la section pour basculer le checkbox
+    // (ex: clic sur le titre h2 ou sur le wrapper du header)
+const sectionHeader = sectionEl.querySelector('.section-header');
+    if (sectionHeader) {
+      // Permet un feedback UI : curseur pointeur au survol du libellé
+      const titleEl = sectionEl.querySelector('h2');
+      if (titleEl) titleEl.style.cursor = 'pointer';
+
+      sectionHeader.addEventListener('click', (e) => {
+        // Ne pas intercepter clics sur boutons/input/file/etc.
+        const target = e.target;
+        if (!target) return;
+        if (target.closest('button') || target.closest('input') || target.closest('select') || target.closest('label')?.classList.contains('file-label')) return;
+        // Si on clique spécifiquement sur le checkbox, on laisse le navigateur gérer
+        if (target === printCheckbox) return;
+        printCheckbox.checked = !printCheckbox.checked;
+        updatePrintButtonState();
+      });
+    }
   }
 
   // Edit Section
