@@ -499,12 +499,19 @@ function loadFiltersState() {
       const filters = state[type];
       if (!filters) return;
       const slug = sectionTypeToSlug(type);
-      
-      if (document.getElementById(`filter-day-${slug}`)) document.getElementById(`filter-day-${slug}`).value = filters.day;
-      if (document.getElementById(`filter-month-${slug}`)) document.getElementById(`filter-month-${slug}`).value = filters.month;
-      if (document.getElementById(`filter-granularity-${slug}`)) document.getElementById(`filter-granularity-${slug}`).value = filters.granularity;
-      
 
+      const dayEl = document.getElementById(`filter-day-${slug}`);
+      if (dayEl) dayEl.value = filters.day;
+
+      const monthEl = document.getElementById(`filter-month-${slug}`);
+      if (monthEl) monthEl.value = filters.month;
+
+      const granEl = document.getElementById(`filter-granularity-${slug}`);
+      if (granEl) granEl.value = filters.granularity;
+
+      // IMPORTANT: restaurer aussi le toggle "Afficher Totaux"
+      const totalsEl = document.getElementById(`filter-totals-${slug}`);
+      if (totalsEl) totalsEl.checked = !!filters.showChartTotals;
     });
   } catch (e) { console.error("Erreur restauration filtres:", e); }
 }
@@ -1447,6 +1454,21 @@ function deleteRow(index) {
 function attachEventListeners() {
   const resetBtn = document.getElementById("btn-reset-all");
   if (resetBtn) resetBtn.addEventListener("click", clearAllData);
+
+  // Case à cocher générale : sélectionner/désélectionner toutes les sections pour l'impression
+  const printSelectAll = document.getElementById("print-select-all");
+  if (printSelectAll) {
+    printSelectAll.addEventListener("change", () => {
+      const checkboxes = document.querySelectorAll(".section-print-checkbox");
+      const targetChecked = printSelectAll.checked;
+      checkboxes.forEach(cb => {
+        cb.checked = targetChecked;
+      });
+      // Met à jour l'état bouton impression (au cas où)
+      updatePrintButtonState();
+    });
+  }
+
 
   // Bouton d'impression
   const printBtn = document.getElementById("btn-print-report");
