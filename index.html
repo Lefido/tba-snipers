@@ -17,6 +17,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
 
   <link rel="stylesheet" href="style.css">
+
+  <!-- PWA / Raccourci écran d'accueil -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/snipers_icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/snipers_icon.png">
 </head>
 <body>
   <!-- Header fixe -->
@@ -46,7 +51,7 @@
         <!-- Case à cocher générale pour l'impression -->
         <label class="btn btn-secondary no-print" style="cursor:pointer; user-select:none; padding: 10px 18px; display:flex; align-items:center; gap:10px;">
           <input type="checkbox" id="print-select-all" style="transform: scale(1.2); accent-color: var(--primary);">
-          <span>Cocher toutes les sections</span>
+          <span>Tout sélectionner (Rapport)</span>
         </label>
 
         <button id="btn-add-section" class="btn btn-primary">+ Ajouter une section</button>
