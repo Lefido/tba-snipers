@@ -32,7 +32,10 @@
 
 html {
   scroll-behavior: smooth;
+  /* Les ancres sont masquées par le header fixe en desktop */
+  scroll-padding-top: var(--header-total-height, 140px);
 }
+
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
